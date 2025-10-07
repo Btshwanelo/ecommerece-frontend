@@ -9,7 +9,8 @@ export const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,
+  // Disable credentials by default to avoid CORS issues on public endpoints
+  withCredentials: false,
 });
 
 // Request interceptor to add auth token
@@ -17,30 +18,34 @@ api.interceptors.request.use(
   (config) => {
     const token =
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    
+
     // Only add auth token for protected endpoints
-    const url = config.url || '';
-    const isPublicEndpoint = url.includes('/products') || 
-                            url.includes('/categories') || 
-                            url.includes('/brands') ||
-                            url.includes('/attributes') ||
-                            url.includes('/delivery/available');
-    
-    console.log('API Request:', { url, isPublicEndpoint, hasToken: !!token });
-    
+    const url = config.url || "";
+    const isPublicEndpoint =
+      url.includes("/products") ||
+      url.includes("/categories") ||
+      url.includes("/brands") ||
+      url.includes("/attributes") ||
+      url.includes("/delivery/available");
+
+    console.log("API Request:", { url, isPublicEndpoint, hasToken: !!token });
+
+    // Only send cookies/credentials for protected endpoints
+    config.withCredentials = !isPublicEndpoint;
+
     if (token && !isPublicEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Added auth token for protected endpoint');
+      console.log("Added auth token for protected endpoint");
     } else if (isPublicEndpoint) {
-      console.log('Skipping auth token for public endpoint');
+      console.log("Skipping auth token for public endpoint");
     }
-    
+
     // If the data is FormData, remove the default Content-Type header
     // to let Axios set it automatically with the proper boundary
     if (config.data instanceof FormData) {
-      delete config.headers['Content-Type'];
+      delete config.headers["Content-Type"];
     }
-    
+
     return config;
   },
   (error) => {
@@ -52,29 +57,29 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.log('API Response Error:', { 
-      status: error.response?.status, 
+    console.log("API Response Error:", {
+      status: error.response?.status,
       url: error.config?.url,
-      message: error.message 
+      message: error.message,
     });
-    
+
     if (error.response?.status === 401) {
       // Handle unauthorized access - only redirect for protected endpoints
       if (typeof window !== "undefined") {
-        const url = error.config?.url || '';
-        const isProtectedEndpoint = url.includes('/users') || 
-                                   url.includes('/orders') || 
-                                   url.includes('/cart') ||
-                                   url.includes('/addresses');
-        
-        console.log('401 Error:', { url, isProtectedEndpoint });
-        
+        const url = error.config?.url || "";
+         const isProtectedEndpoint =
+           url.includes("/users") ||
+           url.includes("/orders") ||
+           url.includes("/cart");
+
+        console.log("401 Error:", { url, isProtectedEndpoint });
+
         if (isProtectedEndpoint) {
-          console.log('Redirecting to login for protected endpoint');
+          console.log("Redirecting to login for protected endpoint");
           localStorage.removeItem("token");
           window.location.href = "/auth/login";
         } else {
-          console.log('Not redirecting for public endpoint');
+          console.log("Not redirecting for public endpoint");
         }
       }
     }

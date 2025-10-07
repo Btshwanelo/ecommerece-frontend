@@ -17,9 +17,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Product } from "@/types";
-import productService from "@/services/productService";
-import { useApi } from "@/hooks/useApi";
-import { SingleProductResponse } from "@/services/productService";
+import { ProductService, CartService } from "@/services/v2";
 import Link from "next/link";
 
 export default function ProductDetailsPage() {
@@ -31,25 +29,37 @@ export default function ProductDetailsPage() {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [cartMessage, setCartMessage] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
-  // Fetch product data
-  const {
-    data: productData,
-    loading: productLoading,
-    error: productError,
-    execute: fetchProduct,
-  } = useApi<SingleProductResponse>(
-    productService.getProductById.bind(productService)
-  );
+  // Local state for v2 fetching
+  const [product, setProduct] = useState<Product | null>(null);
+  const [productLoading, setProductLoading] = useState<boolean>(true);
+  const [productError, setProductError] = useState<string | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
 
-  const product = productData?.product;
-
-  // Memoize the fetch function to prevent infinite loops
-  const fetchProductData = useCallback(() => {
-    if (productId) {
-      fetchProduct(productId);
+  // Fetch product from v2 API
+  const fetchProductData = useCallback(async () => {
+    if (!productId) return;
+    try {
+      setProductLoading(true);
+      setProductError(null);
+      const response = await ProductService.getProductById(productId);
+      if (response.success) {
+        const prod = response.product || (response as any).data;
+        setProduct(prod || null);
+        const rel = (response as any).relatedProducts || [];
+        setRelatedProducts(Array.isArray(rel) ? rel : []);
+      } else {
+        setProduct(null);
+        setProductError(response.error || "Failed to fetch product");
+      }
+    } catch (err: any) {
+      setProduct(null);
+      setProductError(err?.message || "Failed to fetch product");
+    } finally {
+      setProductLoading(false);
     }
-  }, [productId, fetchProduct]);
+  }, [productId]);
 
   useEffect(() => {
     fetchProductData();
@@ -62,23 +72,25 @@ export default function ProductDetailsPage() {
     }).format(price);
   };
 
-  const discountPercentage = product?.salePrice
-    ? Math.round(((product.price - product.salePrice) / product.price) * 100)
+  // Support v2 pricing shape with fallback
+  const basePrice = product?.pricing?.basePrice ?? (product as any)?.price ?? 0;
+  const salePrice = product?.pricing?.salePrice ?? (product as any)?.salePrice;
+  const discountPercentage = salePrice
+    ? Math.round(((basePrice - salePrice) / basePrice) * 100)
     : 0;
 
   // Get product images
   const getProductImages = () => {
     if (product?.images && product.images.length > 0) {
       return product.images
-        .map((image, index) => {
-          if (typeof image === "string") {
-            return image;
-          }
-          return image.downloadUrl || image.directUrl;
+        .map((image) => {
+          if (typeof image === "string") return image;
+          // v2 uses url, v1 used downloadUrl/directUrl
+          return (image as any).url || (image as any).downloadUrl || (image as any).directUrl || null;
         })
-        .filter(Boolean);
+        .filter(Boolean) as string[];
     }
-    return [];
+    return [] as string[];
   };
 
   const productImages = getProductImages();
@@ -92,13 +104,44 @@ export default function ProductDetailsPage() {
     if (isAddingToCart || !product) return;
 
     setIsAddingToCart(true);
+    setCartMessage(null);
+    
     try {
-      // TODO: Implement cart service integration
-      console.log("Added to cart:", product.name, "Quantity:", quantity);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    } catch (error) {
+      console.log("Adding to cart:", product.name, "Quantity:", quantity);
+      
+      // Call the v2 cart API
+      const response = await CartService.addToCart({
+        productId: product._id,
+        quantity: quantity,
+        // For variable products, you might need to specify variantId
+        // variantId: selectedVariant?._id
+      });
+      
+      console.log("Cart API response:", response);
+      
+      if (response.success) {
+        setCartMessage({
+          type: 'success',
+          message: `${product.name} added to cart successfully!`
+        });
+        
+        // Reset quantity to 1 after successful add
+        setQuantity(1);
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setCartMessage(null), 3000);
+      } else {
+        setCartMessage({
+          type: 'error',
+          message: response.error || 'Failed to add item to cart'
+        });
+      }
+    } catch (error: any) {
       console.error("Error adding to cart:", error);
+      setCartMessage({
+        type: 'error',
+        message: error?.response?.data?.error || 'Failed to add item to cart'
+      });
     } finally {
       setIsAddingToCart(false);
     }
@@ -267,8 +310,7 @@ export default function ProductDetailsPage() {
               {/* Category */}
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                  {product.category?.name}{" "}
-                  {product.subcategory && `• ${product.subcategory.name}`}
+                  {((product as any).categoryId?.name) || (product as any).category?.name}
                 </p>
                 <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
                   {product.name}
@@ -277,13 +319,13 @@ export default function ProductDetailsPage() {
 
               {/* Price */}
               <div className="space-y-2">
-                {product.salePrice ? (
+                {salePrice ? (
                   <div className="flex items-center gap-4">
                     <span className="text-3xl lg:text-4xl font-bold text-black">
-                      {formatPrice(product.salePrice)}
+                      {formatPrice(salePrice)}
                     </span>
                     <span className="text-xl lg:text-2xl text-gray-400 line-through">
-                      {formatPrice(product.price)}
+                      {formatPrice(basePrice)}
                     </span>
                     <span className="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
                       {discountPercentage}% OFF
@@ -291,21 +333,21 @@ export default function ProductDetailsPage() {
                   </div>
                 ) : (
                   <span className="text-3xl lg:text-4xl font-bold text-black">
-                    {formatPrice(product.price)}
+                    {formatPrice(basePrice)}
                   </span>
                 )}
               </div>
 
               {/* Stock Status */}
               <div className="flex items-center gap-3">
-                {product.inventory?.quantity > 0 ? (
+                {(product.inventory?.stockQuantity || (product.inventory as any)?.quantity || 0) > 0 ? (
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     <span className="text-green-600 font-semibold">
                       In Stock
                     </span>
                     <span className="text-sm text-gray-500">
-                      ({product.inventory.quantity} available)
+                      ({product.inventory?.stockQuantity ?? (product.inventory as any)?.quantity ?? 0} available)
                     </span>
                   </div>
                 ) : (
@@ -331,7 +373,7 @@ export default function ProductDetailsPage() {
               )}
 
               {/* Quantity Selector */}
-              {product.inventory?.quantity > 0 && (
+              {(product.inventory?.stockQuantity || (product.inventory as any)?.quantity || 0) > 0 && (
                 <div className="space-y-3">
                   <label className="block text-lg font-semibold text-gray-900">
                     Quantity
@@ -347,11 +389,10 @@ export default function ProductDetailsPage() {
                       {quantity}
                     </span>
                     <button
-                      onClick={() =>
-                        setQuantity(
-                          Math.min(product.inventory.quantity, quantity + 1)
-                        )
-                      }
+                      onClick={() => {
+                        const maxQty = product.inventory?.stockQuantity ?? (product.inventory as any)?.quantity ?? 1;
+                        setQuantity(Math.min(maxQty, quantity + 1));
+                      }}
                       className="w-12 h-12 border-2 border-gray-300 rounded-xl flex items-center justify-center hover:bg-gray-50 hover:border-gray-400 transition-colors"
                     >
                       <Plus className="h-5 w-5" />
@@ -364,7 +405,10 @@ export default function ProductDetailsPage() {
               <div className="space-y-4">
                 <motion.button
                   onClick={handleAddToCart}
-                  disabled={isAddingToCart || product.inventory?.quantity === 0}
+                  disabled={
+                    isAddingToCart ||
+                    ((product.inventory?.stockQuantity || (product.inventory as any)?.quantity || 0) === 0)
+                  }
                   className="w-full bg-black text-white py-5 px-8 rounded-2xl font-bold text-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -377,7 +421,7 @@ export default function ProductDetailsPage() {
                   ) : (
                     <div className="flex items-center justify-center">
                       <ShoppingBag className="h-6 w-6 mr-3" />
-                      {product.inventory?.quantity === 0
+                      {(product.inventory?.stockQuantity || (product.inventory as any)?.quantity || 0) === 0
                         ? "Out of Stock"
                         : "Add to Cart"}
                     </div>
@@ -403,6 +447,27 @@ export default function ProductDetailsPage() {
                   </div>
                 </motion.button>
               </div>
+
+              {/* Cart Message */}
+              {cartMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className={`p-4 rounded-lg border-2 ${
+                    cartMessage.type === 'success'
+                      ? 'bg-green-50 border-green-200 text-green-800'
+                      : 'bg-red-50 border-red-200 text-red-800'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <div className={`w-5 h-5 rounded-full mr-3 ${
+                      cartMessage.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                    }`}></div>
+                    <span className="font-medium">{cartMessage.message}</span>
+                  </div>
+                </motion.div>
+              )}
 
               {/* Features */}
               <div className="border-t border-gray-200 pt-6">

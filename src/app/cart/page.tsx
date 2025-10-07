@@ -6,35 +6,54 @@ import Image from 'next/image';
 import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Cart, CartItem } from '@/types';
-import cartService from '@/services/cartService';
-import { useApi } from '@/hooks/useApi';
-import { CartResponse } from '@/services/cartService';
+import { CartService } from '@/services/v2';
 
 export default function CartPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  
+  // Local state for v2 cart data
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [cartLoading, setCartLoading] = useState(true);
+  const [cartError, setCartError] = useState<string | null>(null);
 
-  // Fetch cart data
-  const {
-    data: cartData,
-    loading: cartLoading,
-    error: cartError,
-    execute: fetchCart,
-  } = useApi<CartResponse>(cartService.getCart.bind(cartService));
-
-  const cart = cartData?.cart;
-  const cartItems = cart?.items || [];
+  // Fetch cart data from v2 API
+  const fetchCart = async () => {
+    try {
+      setCartLoading(true);
+      setCartError(null);
+      
+      const response = await CartService.getCart();
+      console.log('Cart API response:', response);
+      
+      if (response.success) {
+        setCart(response.cart || response.data || null);
+      } else {
+        setCartError(response.error || 'Failed to fetch cart');
+        setCart(null);
+      }
+    } catch (error: any) {
+      console.error('Error fetching cart:', error);
+      setCartError(error?.response?.data?.error || 'Failed to fetch cart');
+      setCart(null);
+    } finally {
+      setCartLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchCart();
-  }, [fetchCart]);
+  }, []);
+
+  const cartItems = cart?.items || [];
 
   const updateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     
     setIsUpdating(true);
     try {
-      await cartService.updateCartItem(itemId, newQuantity);
+      // Pass quantity as an object with quantity property
+      await CartService.updateCartItem(itemId, { quantity: newQuantity });
       // Refresh cart data
       fetchCart();
     } catch (error) {
@@ -46,7 +65,7 @@ export default function CartPage() {
 
   const removeItem = async (itemId: string) => {
     try {
-      await cartService.removeFromCart(itemId);
+      await CartService.removeCartItem(itemId);
       // Refresh cart data
       fetchCart();
     } catch (error) {
@@ -61,32 +80,47 @@ export default function CartPage() {
     }).format(price);
   };
 
-  const subtotal = cart?.total || 0;
-  const shipping = subtotal > 50 ? 0 : 10;
-  const tax = subtotal * 0.08; // 8% tax
-  const total = subtotal + shipping + tax;
+  // Calculate totals - use v2 API totals structure
+  const subtotal = cart?.totals?.subtotal || 0;
+  const shipping = cart?.totals?.shippingAmount || 0;
+  const tax = cart?.totals?.taxAmount || 0;
+  const discount = cart?.totals?.discountAmount || 0;
+  const total = cart?.totals?.total || 0;
 
-  // Get product image
-  const getProductImage = (item: CartItem) => {
-    if (item.product.images && item.product.images.length > 0) {
+  // Get product image - handle v2 API structure where product data is in productId
+  const getProductImage = (item: any) => {
+    // v2 API has product data in productId field
+    const product = item.productId || item.product;
+    
+    if (product?.images && product.images.length > 0) {
       // If images is an array of strings (URLs)
-      if (typeof item.product.images[0] === 'string') {
-        return item.product.images[0];
+      if (typeof product.images[0] === 'string') {
+        return product.images[0];
       }
-      // If images is an array of objects with downloadUrl
-      if (typeof item.product.images[0] === 'object') {
+      // If images is an array of objects - v2 API uses 'url' property
+      if (typeof product.images[0] === 'object') {
         // First try to find the primary image
-        const primaryImage = item.product.images.find(img => img.isPrimary);
-        if (primaryImage && primaryImage.downloadUrl) {
-          return primaryImage.downloadUrl;
+        const primaryImage = product.images.find((img: any) => img.isPrimary);
+        if (primaryImage) {
+          // v2 API uses 'url' property
+          if (primaryImage.url) {
+            return primaryImage.url;
+          }
+          // v1 API fallback
+          if (primaryImage.downloadUrl) {
+            return primaryImage.downloadUrl;
+          }
         }
         // If no primary image, use the first image
-        if (item.product.images[0].downloadUrl) {
-          return item.product.images[0].downloadUrl;
+        if (product.images[0].url) {
+          return product.images[0].url;
+        }
+        if (product.images[0].downloadUrl) {
+          return product.images[0].downloadUrl;
         }
         // Fallback to directUrl if downloadUrl is not available
-        if (item.product.images[0].directUrl) {
-          return item.product.images[0].directUrl;
+        if (product.images[0].directUrl) {
+          return product.images[0].directUrl;
         }
       }
     }
@@ -207,7 +241,7 @@ export default function CartPage() {
                           {getProductImage(item) && !imageErrors.has(item._id) ? (
                             <Image
                               src={getProductImage(item)!}
-                              alt={item.product.name}
+                              alt={(item.productId || item.product)?.name || 'Product'}
                               fill
                               className="object-cover"
                               onError={() => handleImageError(item._id)}
@@ -227,13 +261,19 @@ export default function CartPage() {
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-medium text-gray-900 truncate">
-                          {item.product.name}
+                          {(item.productId || item.product)?.name || 'Product'}
                         </h3>
                         <p className="text-sm text-gray-500 truncate">
-                          {item.product.category?.name || 'Uncategorized'}
+                          {(item.productId || item.product)?.categoryId?.name || 
+                           (item.productId || item.product)?.category?.name || 'Uncategorized'}
                         </p>
                         <p className="text-sm font-medium text-gray-900">
-                          {formatPrice(item.product.salePrice || item.product.price)}
+                          {formatPrice(
+                            (item.productId || item.product)?.pricing?.salePrice || 
+                            (item.productId || item.product)?.pricing?.basePrice ||
+                            (item.productId || item.product)?.salePrice || 
+                            (item.productId || item.product)?.price || 0
+                          )}
                         </p>
                       </div>
 
@@ -263,7 +303,7 @@ export default function CartPage() {
                       {/* Item Total */}
                       <div className="text-right">
                         <p className="text-sm font-medium text-gray-900">
-                          {formatPrice(item.price)}
+                          {formatPrice(item.totalPrice || item.price || 0)}
                         </p>
                       </div>
 
@@ -303,6 +343,13 @@ export default function CartPage() {
                   <span className="text-gray-600">Tax</span>
                   <span className="font-medium">{formatPrice(tax)}</span>
                 </div>
+                
+                {discount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Discount</span>
+                    <span className="font-medium text-green-600">-{formatPrice(discount)}</span>
+                  </div>
+                )}
                 
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-base font-semibold">

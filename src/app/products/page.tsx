@@ -5,11 +5,8 @@ import Layout from '@/components/layout/Layout';
 import ProductCard from '@/components/product/ProductCard';
 import { Product, Category } from '@/types';
 import { Search, Filter, Grid, List, ChevronDown } from 'lucide-react';
-import productService, { ProductFilters } from '@/services/productService';
-import categoryService from '@/services/categoryService';
-import { useApi } from '@/hooks/useApi';
-import { ProductResponse } from '@/services/productService';
-import { CategoryResponse } from '@/services/categoryService';
+import { ProductService, CategoryService } from '@/services/v2';
+import { ProductFilters } from '@/types';
 
 export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,33 +17,21 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Fetch products
-  const {
-    data: productsData,
-    loading: productsLoading,
-    error: productsError,
-    execute: fetchProducts,
-  } = useApi<ProductResponse>(productService.getProducts.bind(productService));
-
-  // Fetch categories
-  const {
-    data: categoriesData,
-    loading: categoriesLoading,
-    execute: fetchCategories,
-  } = useApi<CategoryResponse>(categoryService.getCategories.bind(categoryService));
-
-  const products = productsData?.products || [];
-  const categories = categoriesData?.categories || [];
-  const totalProducts = productsData?.total || 0;
-  const totalPages = productsData?.pages || 1;
+  
+  // State for products and categories
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Build filters object
   const buildFilters = useCallback((): ProductFilters => {
     const filters: ProductFilters = {
       page: currentPage,
       limit: 12,
-      status: 'active',
+      status: ['published'], // Use v2 compatible status
     };
 
     if (searchQuery) {
@@ -54,7 +39,7 @@ export default function ProductsPage() {
     }
 
     if (selectedCategory) {
-      filters.category = selectedCategory;
+      filters.categoryId = selectedCategory;
     }
 
     if (priceRange.min) {
@@ -65,27 +50,67 @@ export default function ProductsPage() {
       filters.maxPrice = Number(priceRange.max);
     }
 
-    // Handle sorting
+    // Handle sorting - use v2 compatible sort values
     if (sortBy === 'price') {
-      filters.sort = sortOrder === 'asc' ? 'price' : '-price';
+      filters.sort = sortOrder === 'asc' ? 'price_asc' : 'price_desc';
     } else if (sortBy === 'name') {
-      filters.sort = sortOrder === 'asc' ? 'name' : '-name';
+      filters.sort = sortOrder === 'asc' ? 'name_asc' : 'name_desc';
     } else {
-      filters.sort = sortOrder === 'asc' ? 'createdAt' : '-createdAt';
+      filters.sort = sortOrder === 'asc' ? 'newest' : 'oldest';
     }
 
     return filters;
   }, [searchQuery, selectedCategory, priceRange, sortBy, sortOrder, currentPage]);
 
-  // Memoize the fetch functions
-  const fetchProductsWithFilters = useCallback(() => {
-    const filters = buildFilters();
-    fetchProducts(filters);
-  }, [buildFilters, fetchProducts]);
+  // Fetch products with filters
+  const fetchProductsWithFilters = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const filters = buildFilters();
+      console.log('Fetching products with filters:', filters);
+      
+      const response = await ProductService.getProducts(filters);
+      console.log('Products API response:', response);
+      
+      if (response.success) {
+        const productsData = response.products || response.data || [];
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setTotalProducts(response.total || 0);
+        setTotalPages(response.pages || 1);
+      } else {
+        console.error('Failed to fetch products:', response.error);
+        setError(response.error || 'Failed to fetch products');
+        setProducts([]);
+      }
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Failed to fetch products');
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [buildFilters]);
 
-  const fetchCategoriesData = useCallback(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+  // Fetch categories
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await CategoryService.getCategories();
+      console.log('Categories API response:', response);
+      
+      if (response.success) {
+        const categoriesData = response.categories || response.data || [];
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      } else {
+        console.error('Failed to fetch categories:', response.error);
+        setCategories([]);
+      }
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      setCategories([]);
+    }
+  }, []);
 
   // Fetch products when filters change
   useEffect(() => {
@@ -94,8 +119,8 @@ export default function ProductsPage() {
 
   // Fetch categories on mount
   useEffect(() => {
-    fetchCategoriesData();
-  }, [fetchCategoriesData]);
+    fetchCategories();
+  }, [fetchCategories]);
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -247,7 +272,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Loading state */}
-        {productsLoading ? (
+        {loading ? (
           <div className={`grid gap-6 ${
             viewMode === 'grid' 
               ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
@@ -263,9 +288,9 @@ export default function ProductsPage() {
               </div>
             ))}
           </div>
-        ) : productsError ? (
+        ) : error ? (
           <div className="text-center py-12">
-            <p className="text-red-600 mb-4">Error loading products</p>
+            <p className="text-red-600 mb-4">Error loading products: {error}</p>
             <button
               onClick={() => fetchProductsWithFilters()}
               className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
@@ -329,7 +354,7 @@ export default function ProductsPage() {
         )}
 
         {/* No results */}
-        {!productsLoading && !productsError && products.length === 0 && (
+        {!loading && !error && products.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No products found matching your criteria.</p>
             <button

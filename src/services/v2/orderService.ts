@@ -23,10 +23,21 @@ export interface CheckoutInitiateData {
 }
 
 export interface CheckoutCompleteData {
-  addressId: string;
-  deliveryOptionId: string;
+  orderId?: string;
+  addressId?: string;
+  deliveryOptionId?: string;
   paymentMethod: string;
   notes?: string;
+  address?: {
+    fullName: string;
+    phone: string;
+    street: string;
+    apartment?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
 }
 
 export class OrderService {
@@ -67,8 +78,13 @@ export class OrderService {
   }
 
   static async completeCheckout(data: CheckoutCompleteData): Promise<V2ApiResponse<Order>> {
-    const response = await api.post(endpoints.orders.completeCheckout, data);
-    return response.data;
+    try {
+      const response = await api.post(endpoints.orders.completeCheckout, data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Checkout completion error:', error.response?.data || error.message);
+      throw error;
+    }
   }
 
   // Get orders by status

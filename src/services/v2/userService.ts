@@ -103,8 +103,21 @@ export class UserService {
 
   // Address Management
   static async getAddresses(): Promise<V2ApiResponse<Address[]>> {
-    const response = await api.get(endpoints.users.addresses);
-    return response.data;
+    try {
+      console.log('Fetching addresses from endpoint:', endpoints.users.addresses);
+      console.log('Full URL will be:', `${api.defaults.baseURL}${endpoints.users.addresses}`);
+      const response = await api.get(endpoints.users.addresses);
+      console.log('Addresses API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching addresses:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+        url: error.config?.url
+      });
+      throw error;
+    }
   }
 
   static async getAddressById(id: string): Promise<V2ApiResponse<Address>> {
@@ -113,8 +126,15 @@ export class UserService {
   }
 
   static async createAddress(addressData: Partial<Address>): Promise<V2ApiResponse<Address>> {
-    const response = await api.post(endpoints.users.createAddress, addressData);
-    return response.data;
+    try {
+      const response = await api.post(endpoints.users.createAddress, addressData);
+      return response.data;
+    } catch (error: any) {
+      console.error('Address creation error response:', error.response?.data);
+      console.error('Address creation error message:', error.message);
+      console.error('Address creation error status:', error.response?.status);
+      throw error;
+    }
   }
 
   static async updateAddress(id: string, addressData: Partial<Address>): Promise<V2ApiResponse<Address>> {

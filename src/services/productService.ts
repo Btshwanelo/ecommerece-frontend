@@ -45,7 +45,8 @@ class ProductService {
       });
 
       const response = await api.get(
-        `${endpoints.products.list}?${params.toString()}`
+        `${endpoints.products.list}?${params.toString()}`,
+        { withCredentials: false }
       );
       return response.data;
     } catch (error) {

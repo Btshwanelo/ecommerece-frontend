@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Heart, ShoppingBag, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Product } from '@/types';
+import { CartService } from '@/services/v2';
 
 interface ProductCardProps {
   product: Product;
@@ -16,6 +17,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [cartMessage, setCartMessage] = useState<string | null>(null);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -24,13 +26,33 @@ const ProductCard = ({ product }: ProductCardProps) => {
     if (isAddingToCart) return;
     
     setIsAddingToCart(true);
+    setCartMessage(null);
+    
     try {
-      // TODO: Implement cart service integration
-      console.log('Added to cart:', product.name);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-    } catch (error) {
+      console.log('Adding to cart:', product.name);
+      
+      // Call the v2 cart API
+      const response = await CartService.addToCart({
+        productId: product._id,
+        quantity: 1,
+        // For variable products, you might need to specify variantId
+        // variantId: selectedVariant?._id
+      });
+      
+      console.log('Cart API response:', response);
+      
+      if (response.success) {
+        setCartMessage('Added to cart!');
+        // Clear success message after 2 seconds
+        setTimeout(() => setCartMessage(null), 2000);
+      } else {
+        setCartMessage('Failed to add to cart');
+        setTimeout(() => setCartMessage(null), 2000);
+      }
+    } catch (error: any) {
       console.error('Error adding to cart:', error);
+      setCartMessage('Failed to add to cart');
+      setTimeout(() => setCartMessage(null), 2000);
     } finally {
       setIsAddingToCart(false);
     }
@@ -51,29 +73,45 @@ const ProductCard = ({ product }: ProductCardProps) => {
     }).format(price);
   };
 
-  const discountPercentage = product.salePrice
-    ? Math.round(((product.price - product.salePrice) / product.price) * 100)
+  // Handle both v1 and v2 API structures
+  const basePrice = product.pricing?.basePrice || product.price || 0;
+  const salePrice = product.pricing?.salePrice || product.salePrice;
+  
+  const discountPercentage = salePrice
+    ? Math.round(((basePrice - salePrice) / basePrice) * 100)
     : 0;
 
   // Get the primary image or first image
   const getProductImage = () => {
     console.log('Product images:', product.images); // Debug log
     if (product.images && product.images.length > 0) {
-      // If images is an array of strings (URLs)
+      // If images is an array of strings (URLs) - v1 API
       if (typeof product.images[0] === 'string') {
         return product.images[0];
       }
-      // If images is an array of objects with downloadUrl
+      // If images is an array of objects - v2 API
       if (typeof product.images[0] === 'object') {
         // First try to find the primary image
         const primaryImage = product.images.find(img => img.isPrimary);
-        if (primaryImage && primaryImage.downloadUrl) {
-          console.log('Using primary image:', primaryImage.downloadUrl); // Debug log
-          return primaryImage.downloadUrl;
+        if (primaryImage) {
+          // v2 API uses 'url' property
+          if (primaryImage.url) {
+            console.log('Using primary image (v2):', primaryImage.url); // Debug log
+            return primaryImage.url;
+          }
+          // v1 API fallback
+          if (primaryImage.downloadUrl) {
+            console.log('Using primary image (v1):', primaryImage.downloadUrl); // Debug log
+            return primaryImage.downloadUrl;
+          }
         }
         // If no primary image, use the first image
+        if (product.images[0].url) {
+          console.log('Using first image (v2):', product.images[0].url); // Debug log
+          return product.images[0].url;
+        }
         if (product.images[0].downloadUrl) {
-          console.log('Using first image:', product.images[0].downloadUrl); // Debug log
+          console.log('Using first image (v1):', product.images[0].downloadUrl); // Debug log
           return product.images[0].downloadUrl;
         }
         // Fallback to directUrl if downloadUrl is not available
@@ -122,7 +160,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           )}
 
           {/* Sale badge */}
-          {product.salePrice && (
+          {salePrice && (
             <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
               -{discountPercentage}%
             </div>
@@ -148,7 +186,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           {/* Add to cart button */}
           <motion.button
             onClick={handleAddToCart}
-            disabled={isAddingToCart || product.inventory?.quantity === 0}
+            disabled={isAddingToCart || (product.inventory?.stockQuantity || product.inventory?.quantity || 0) === 0}
             className="absolute bottom-4 left-4 right-4 bg-black text-white py-3 rounded-lg font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -161,17 +199,34 @@ const ProductCard = ({ product }: ProductCardProps) => {
             ) : (
               <>
                 <ShoppingBag className="h-4 w-4 inline mr-2" />
-                {product.inventory?.quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+                {(product.inventory?.stockQuantity || product.inventory?.quantity || 0) === 0 ? 'Out of Stock' : 'Add to Cart'}
               </>
             )}
           </motion.button>
+
+          {/* Cart Message Toast */}
+          {cartMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="absolute top-4 left-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10"
+            >
+              <div className="flex items-center">
+                <div className={`w-2 h-2 rounded-full mr-2 ${
+                  cartMessage === 'Added to cart!' ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
+                <span className="text-sm font-medium text-gray-800">{cartMessage}</span>
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* Product Info */}
         <div className="p-4">
           {/* Category */}
           <p className="text-sm text-gray-500 mb-1">
-            {product.category?.name || 'Uncategorized'}
+            {product.categoryId?.name || product.category?.name || 'Uncategorized'}
           </p>
           
           {/* Product Name */}
@@ -181,25 +236,25 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
           {/* Price */}
           <div className="flex items-center gap-2">
-            {product.salePrice ? (
+            {salePrice ? (
               <>
                 <span className="text-lg font-bold text-black">
-                  {formatPrice(product.salePrice)}
+                  {formatPrice(salePrice)}
                 </span>
                 <span className="text-sm text-gray-500 line-through">
-                  {formatPrice(product.price)}
+                  {formatPrice(basePrice)}
                 </span>
               </>
             ) : (
               <span className="text-lg font-bold text-black">
-                {formatPrice(product.price)}
+                {formatPrice(basePrice)}
               </span>
             )}
           </div>
 
           {/* Stock status */}
           <div className="mt-2">
-            {product.inventory?.quantity > 0 ? (
+            {(product.inventory?.stockQuantity || product.inventory?.quantity || 0) > 0 ? (
               <span className="text-sm text-green-600">In Stock</span>
             ) : (
               <span className="text-sm text-red-600">Out of Stock</span>

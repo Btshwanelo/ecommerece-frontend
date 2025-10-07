@@ -389,10 +389,10 @@ export interface ProductFilters {
   createdAfter?: string;
   createdBefore?: string;
   tags?: string[];
-  status?: 'draft' | 'published' | 'archived';
+  status?: ('draft' | 'published' | 'archived')[];
   visibility?: 'public' | 'private' | 'hidden';
   search?: string;
-  sort?: 'newest' | 'oldest' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'rating' | 'popular' | 'trending' | 'relevance';
+  sort?: 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'price_asc' | 'price_desc' | 'rating' | 'popular' | 'trending' | 'relevance';
   page?: number;
   limit?: number;
 }
