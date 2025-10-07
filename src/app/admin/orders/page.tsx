@@ -42,7 +42,7 @@ export default function OrdersPage() {
       const response = await OrderService.getOrders(currentFilters);
       
       if (response.success) {
-        setOrders(response.data || []);
+        setOrders(response.orders || []);
         setTotalPages(response.pages || 1);
         setTotal(response.total || 0);
       } else {
@@ -201,10 +201,14 @@ export default function OrdersPage() {
           <div className="border-t pt-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Order Status
+                </label>
                 <select
-                  value={filters.status || ''}
-                  onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
+                  value={filters.status || ""}
+                  onChange={(e) =>
+                    handleFilterChange("status", e.target.value || undefined)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Statuses</option>
@@ -216,12 +220,19 @@ export default function OrdersPage() {
                   <option value="refunded">Refunded</option>
                 </select>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Payment Status
+                </label>
                 <select
-                  value={filters.paymentStatus || ''}
-                  onChange={(e) => handleFilterChange('paymentStatus', e.target.value || undefined)}
+                  value={filters.paymentStatus || ""}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "paymentStatus",
+                      e.target.value || undefined
+                    )
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Payment Status</option>
@@ -233,20 +244,29 @@ export default function OrdersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date Range
+                </label>
                 <input
                   type="date"
-                  value={filters.createdAfter || ''}
-                  onChange={(e) => handleFilterChange('createdAfter', e.target.value || undefined)}
+                  value={filters.createdAfter || ""}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "createdAfter",
+                      e.target.value || undefined
+                    )
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sort By
+                </label>
                 <select
-                  value={filters.sort || '-createdAt'}
-                  onChange={(e) => handleFilterChange('sort', e.target.value)}
+                  value={filters.sort || "-createdAt"}
+                  onChange={(e) => handleFilterChange("sort", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="-createdAt">Newest First</option>
@@ -256,7 +276,7 @@ export default function OrdersPage() {
                 </select>
               </div>
             </div>
-            
+
             <div className="mt-4 flex justify-end">
               <button
                 onClick={clearFilters}
@@ -302,72 +322,90 @@ export default function OrdersPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {Array.isArray(orders) && orders.length > 0 ? (
                   orders.map((order) => (
-                  <tr key={order._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        #{order.orderNumber || order._id.slice(-8)}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {order.items.length} item(s)
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {order.shippingAddress?.firstName} {order.shippingAddress?.lastName}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {typeof order.user === 'object' ? order.user.email : 'N/A'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {format(new Date(order.createdAt), "MMM dd, yyyy")}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="font-medium">${order.total.toFixed(2)}</div>
-                      {order.discount > 0 && (
-                        <div className="text-xs text-green-600">
-                          -${order.discount.toFixed(2)} discount
+                    <tr key={order._id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          #{order.orderNumber || order._id.slice(-8)}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)} border-0 bg-transparent`}
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="refunded">Refunded</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col space-y-1">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(order.paymentStatus)}`}>
-                          {order.paymentStatus}
-                        </span>
-                        <span className="text-xs text-gray-500">{order.paymentMethod}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleViewOrder(order)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="View Order Details"
+                        <div className="text-sm text-gray-500">
+                          {order.items.length} item(s)
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {order.shippingAddress?.firstName}{" "}
+                          {order.shippingAddress?.lastName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {typeof order.user === "object"
+                            ? order.user.email
+                            : "N/A"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {format(new Date(order.createdAt), "MMM dd, yyyy")}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="font-medium">
+                          ${order.total?.toFixed(2)}
+                        </div>
+                        {order.discount > 0 && (
+                          <div className="text-xs text-green-600">
+                            -${order.discount?.toFixed(2)} discount
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          value={order.status}
+                          onChange={(e) =>
+                            handleStatusUpdate(order._id, e.target.value)
+                          }
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                            order.status
+                          )} border-0 bg-transparent`}
                         >
-                          <EyeIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                          <option value="pending">Pending</option>
+                          <option value="processing">Processing</option>
+                          <option value="shipped">Shipped</option>
+                          <option value="delivered">Delivered</option>
+                          <option value="cancelled">Cancelled</option>
+                          <option value="refunded">Refunded</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col space-y-1">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(
+                              order.paymentStatus
+                            )}`}
+                          >
+                            {order.paymentStatus}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {order.payment.method}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleViewOrder(order)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="View Order Details"
+                          >
+                            <EyeIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                    <td
+                      colSpan={7}
+                      className="px-6 py-4 text-center text-gray-500"
+                    >
                       No orders found
                     </td>
                   </tr>
@@ -388,7 +426,9 @@ export default function OrdersPage() {
                   Previous
                 </button>
                 <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  onClick={() =>
+                    setCurrentPage(Math.min(totalPages, currentPage + 1))
+                  }
                   disabled={currentPage === totalPages}
                   className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
@@ -398,21 +438,26 @@ export default function OrdersPage() {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, total)} of{" "}
+                    Showing {(currentPage - 1) * 10 + 1} to{" "}
+                    {Math.min(currentPage * 10, total)} of{" "}
                     <span className="font-medium">{total}</span> results
                   </p>
                 </div>
                 <div>
                   <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                     <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      onClick={() =>
+                        setCurrentPage(Math.max(1, currentPage - 1))
+                      }
                       disabled={currentPage === 1}
                       className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                     >
                       Previous
                     </button>
                     <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      onClick={() =>
+                        setCurrentPage(Math.min(totalPages, currentPage + 1))
+                      }
                       disabled={currentPage === totalPages}
                       className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                     >
@@ -433,7 +478,8 @@ export default function OrdersPage() {
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Order Details - #{selectedOrder.orderNumber || selectedOrder._id.slice(-8)}
+                  Order Details - #
+                  {selectedOrder.orderNumber || selectedOrder._id.slice(-8)}
                 </h3>
                 <button
                   onClick={() => setShowOrderDetails(false)}
@@ -442,42 +488,73 @@ export default function OrdersPage() {
                   <XMarkIcon className="h-6 w-6" />
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 {/* Order Summary */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Order Summary</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">
+                    Order Summary
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Order Status</label>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedOrder.status)}`}>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Order Status
+                      </label>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                          selectedOrder.status
+                        )}`}
+                      >
                         {selectedOrder.status}
                       </span>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Payment Status</label>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(selectedOrder.paymentStatus)}`}>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Payment Status
+                      </label>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(
+                          selectedOrder.paymentStatus
+                        )}`}
+                      >
                         {selectedOrder.paymentStatus}
                       </span>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Payment Method</label>
-                      <p className="text-sm text-gray-900">{selectedOrder.paymentMethod}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Total Amount</label>
-                      <p className="text-sm text-gray-900 font-medium">${selectedOrder.total.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Order Date</label>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Payment Method
+                      </label>
                       <p className="text-sm text-gray-900">
-                        {format(new Date(selectedOrder.createdAt), "MMM dd, yyyy 'at' h:mm a")}
+                        {selectedOrder.paymentMethod}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Total Amount
+                      </label>
+                      <p className="text-sm text-gray-900 font-medium">
+                        ${selectedOrder.total.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Order Date
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {format(
+                          new Date(selectedOrder.createdAt),
+                          "MMM dd, yyyy 'at' h:mm a"
+                        )}
                       </p>
                     </div>
                     {selectedOrder.trackingNumber && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Tracking Number</label>
-                        <p className="text-sm text-gray-900 font-mono">{selectedOrder.trackingNumber}</p>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Tracking Number
+                        </label>
+                        <p className="text-sm text-gray-900 font-mono">
+                          {selectedOrder.trackingNumber}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -485,20 +562,35 @@ export default function OrdersPage() {
 
                 {/* Order Items */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Order Items</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">
+                    Order Items
+                  </h4>
                   <div className="space-y-2">
                     {selectedOrder.items.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                      <div
+                        key={index}
+                        className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0"
+                      >
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">{item.product.name}</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {item.product.name}
+                          </p>
                           {item.variant && (
-                            <p className="text-xs text-gray-500">Variant: {item.variant.sku}</p>
+                            <p className="text-xs text-gray-500">
+                              Variant: {item.variant.sku}
+                            </p>
                           )}
-                          <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                          <p className="text-xs text-gray-500">
+                            Qty: {item.quantity}
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900">${item.total.toFixed(2)}</p>
-                          <p className="text-xs text-gray-500">${item.price.toFixed(2)} each</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            ${item.total.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            ${item.price.toFixed(2)} each
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -507,17 +599,28 @@ export default function OrdersPage() {
 
                 {/* Shipping Address */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Shipping Address</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">
+                    Shipping Address
+                  </h4>
                   <div className="text-sm text-gray-900">
-                    <p>{selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName}</p>
+                    <p>
+                      {selectedOrder.shippingAddress.firstName}{" "}
+                      {selectedOrder.shippingAddress.lastName}
+                    </p>
                     <p>{selectedOrder.shippingAddress.addressLine1}</p>
                     {selectedOrder.shippingAddress.addressLine2 && (
                       <p>{selectedOrder.shippingAddress.addressLine2}</p>
                     )}
-                    <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.postalCode}</p>
+                    <p>
+                      {selectedOrder.shippingAddress.city},{" "}
+                      {selectedOrder.shippingAddress.state}{" "}
+                      {selectedOrder.shippingAddress.postalCode}
+                    </p>
                     <p>{selectedOrder.shippingAddress.country}</p>
                     {selectedOrder.shippingAddress.phone && (
-                      <p className="mt-1">Phone: {selectedOrder.shippingAddress.phone}</p>
+                      <p className="mt-1">
+                        Phone: {selectedOrder.shippingAddress.phone}
+                      </p>
                     )}
                   </div>
                 </div>

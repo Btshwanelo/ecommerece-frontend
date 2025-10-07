@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Truck, CreditCard, ArrowLeft } from "lucide-react";
 import Layout from "@/components/layout/Layout";
@@ -25,6 +26,7 @@ interface AddressForm {
 }
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +44,6 @@ export default function CheckoutPage() {
 
   const [deliveryOptions, setDeliveryOptions] = useState<any[]>([]);
   const [selectedDeliveryId, setSelectedDeliveryId] = useState<string>("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState<string>("cod");
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderMessage, setOrderMessage] = useState<{
     type: "success" | "error";
@@ -246,7 +246,6 @@ export default function CheckoutPage() {
     console.log("Place order clicked");
     console.log("Cart:", cart);
     console.log("Selected delivery ID:", selectedDeliveryId);
-    console.log("Selected payment method:", selectedPaymentMethod);
     console.log("Use existing address:", useExistingAddress);
     console.log("Selected address ID:", selectedAddressId);
     console.log("Address form data:", address);
@@ -262,14 +261,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!selectedPaymentMethod) {
-      console.log("No payment method selected");
-      setOrderMessage({
-        type: "error",
-        message: "Please select a payment method",
-      });
-      return;
-    }
 
     // Address validation
     let shippingAddress;
@@ -317,7 +308,7 @@ export default function CheckoutPage() {
     setPlacingOrder(true);
     setOrderMessage(null);
     try {
-      // Step 1: initiate checkout
+      // Step 1: Initiate checkout (creates order in pending state)
       const initiateRes = await OrderService.initiateCheckout({});
       console.log("Initiate checkout response:", initiateRes);
 
@@ -349,14 +340,13 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Step 2: complete checkout (COD/placeholder payment)
-      const checkoutData: any = {
+      // Store checkout data for payment step
+      const checkoutData = {
         orderId,
         deliveryOptionId:
           selectedDeliveryId === "default-delivery"
             ? undefined
             : selectedDeliveryId,
-        paymentMethod: selectedPaymentMethod,
         notes: "",
       };
 
@@ -426,64 +416,18 @@ export default function CheckoutPage() {
         }
       }
 
-      console.log("Checkout data:", checkoutData);
-
-      // Create checkout payload with either addressId or address data
-      const checkoutPayload: any = {
-        orderId: checkoutData.orderId,
-        deliveryOptionId: checkoutData.deliveryOptionId,
-        paymentMethod: checkoutData.paymentMethod,
-        notes: checkoutData.notes,
-      };
-
-      // Add either addressId or address data
-      if (checkoutData.addressId) {
-        checkoutPayload.addressId = checkoutData.addressId;
-        console.log("Using addressId for checkout:", checkoutData.addressId);
-      } else if (checkoutData.address) {
-        checkoutPayload.address = checkoutData.address;
-        console.log("Using address data for checkout:", checkoutData.address);
-      }
-
-      console.log("Checkout payload with address:", checkoutPayload);
-
-      try {
-        const completeRes = await OrderService.completeCheckout(
-          checkoutPayload
-        );
-
-        if (!completeRes.success) {
-          setOrderMessage({
-            type: "error",
-            message: completeRes.error || "Failed to complete checkout",
-          });
-          setPlacingOrder(false);
-          return;
-        }
-      } catch (error: any) {
-        console.error("Checkout completion failed:", error);
-        console.error("Error response:", error.response?.data);
-        setOrderMessage({
-          type: "error",
-          message:
-            error.response?.data?.message ||
-            error.message ||
-            "Failed to complete checkout",
-        });
-        setPlacingOrder(false);
-        return;
-      }
+      // Store checkout data in sessionStorage for payment step
+      sessionStorage.setItem('checkoutData', JSON.stringify(checkoutData));
 
       setOrderMessage({
         type: "success",
-        message: "Order placed successfully!",
+        message: "Checkout initiated! Redirecting to payment...",
       });
-      // Optionally refresh cart
-      try {
-        const refreshed = await CartService.getCart();
-        if (refreshed.success)
-          setCart((refreshed as any).cart || refreshed.data || null);
-      } catch {}
+
+      // Redirect to payment page with order ID
+      setTimeout(() => {
+        router.push(`/checkout/payment?orderId=${orderId}`);
+      }, 1500);
     } catch (e: any) {
       setOrderMessage({
         type: "error",
@@ -812,91 +756,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Payment Method */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <CreditCard className="h-5 w-5 text-gray-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Payment Method
-                  </h2>
-                </div>
-                <div className="space-y-3">
-                  <label className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="cod"
-                        checked={selectedPaymentMethod === "cod"}
-                        onChange={(e) =>
-                          setSelectedPaymentMethod(e.target.value)
-                        }
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Cash on Delivery (COD)
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Pay when your order arrives
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-sm font-semibold text-green-600">
-                      Free
-                    </div>
-                  </label>
-
-                  <label className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="debit_card"
-                        checked={selectedPaymentMethod === "debit_card"}
-                        onChange={(e) =>
-                          setSelectedPaymentMethod(e.target.value)
-                        }
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Credit/Debit Card
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Pay securely with your card
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-sm font-semibold text-blue-600">
-                      Secure
-                    </div>
-                  </label>
-
-                  <label className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="bank_transfer"
-                        checked={selectedPaymentMethod === "bank_transfer"}
-                        onChange={(e) =>
-                          setSelectedPaymentMethod(e.target.value)
-                        }
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Bank Transfer
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Transfer directly to our bank account
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-sm font-semibold text-purple-600">
-                      Direct
-                    </div>
-                  </label>
-                </div>
-              </div>
             </div>
 
             {/* Right: Order Summary */}
@@ -979,7 +838,7 @@ export default function CheckoutPage() {
                   disabled={placingOrder}
                   className="mt-6 w-full bg-black text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800 disabled:opacity-50"
                 >
-                  {placingOrder ? "Placing Order…" : "Place Order"}
+                  {placingOrder ? "Creating Order…" : "Create Order & Proceed to Payment"}
                 </button>
 
                 <Link

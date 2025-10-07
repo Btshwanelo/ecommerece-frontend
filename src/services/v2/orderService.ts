@@ -28,6 +28,10 @@ export interface CheckoutCompleteData {
   deliveryOptionId?: string;
   paymentMethod: string;
   notes?: string;
+  paymentDetails?: {
+    cardLast4?: string;
+    cardType?: string;
+  };
   address?: {
     fullName: string;
     phone: string;
@@ -76,6 +80,7 @@ export class OrderService {
     const response = await api.post(endpoints.orders.initiateCheckout, {}, { headers });
     return response.data;
   }
+
 
   static async completeCheckout(data: CheckoutCompleteData): Promise<V2ApiResponse<Order>> {
     try {
