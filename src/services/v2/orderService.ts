@@ -1,21 +1,12 @@
+// OrderService with updateOrderStatus method - Updated: 2025-01-08 10:30:00
+import axios from 'axios';
 import { api, endpoints } from '@/lib/api';
 import { 
   Order, 
+  OrderFilters,
   V2ApiResponse, 
   V2PaginatedResponse 
 } from '@/types';
-
-export interface OrderFilters {
-  page?: number;
-  limit?: number;
-  sort?: string;
-  status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
-  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
-  userId?: string;
-  search?: string;
-  createdAfter?: string;
-  createdBefore?: string;
-}
 
 export interface CheckoutInitiateData {
   sessionId?: string;
@@ -128,6 +119,16 @@ export class OrderService {
   // Get recent orders
   static async getRecentOrders(limit: number = 10): Promise<V2PaginatedResponse<Order>> {
     return this.getOrders({ limit, sort: '-createdAt' });
+  }
+
+  // Update order status - API method (uses v2 API endpoint)
+  static async updateOrderStatus(orderId: string, status: string, reason?: string): Promise<V2ApiResponse<Order>> {
+    // Note: Status update is now available in v2 API
+    const response = await api.put(`/orders/${orderId}/status`, {
+      status,
+      reason
+    });
+    return response.data;
   }
 }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Order } from "@/types";
 import { format } from "date-fns";
+import { formatCurrency } from "@/lib/storeConfig";
 
 export default function RecentOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -96,7 +97,7 @@ export default function RecentOrders() {
                   {order.status}
                 </span>
                 <span className="text-sm font-medium text-gray-900">
-                  ${order?.total?.toFixed(2)}
+                  {formatCurrency(order?.total)}
                 </span>
               </div>
             </div>

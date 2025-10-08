@@ -7,6 +7,7 @@ import { CreditCard, Lock, ArrowLeft, CheckCircle } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Order } from "@/types";
 import { OrderService } from "@/services/v2";
+import { formatCurrency } from "@/lib/storeConfig";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -347,7 +348,7 @@ export default function PaymentPage() {
                         Total:
                       </span>
                       <span className="font-semibold text-gray-900">
-                        R{orderTotal.toFixed(2)}
+                        {formatCurrency(orderTotal)}
                       </span>
                     </div>
                   </div>

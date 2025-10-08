@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Product } from "@/types";
+import { formatCurrency } from "@/lib/storeConfig";
 
 export default function TopProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -74,7 +75,7 @@ export default function TopProducts() {
                   {product.name}
                 </p>
                 <p className="text-sm text-gray-500">
-                  ${product?.price?.toFixed(2)}
+                  {formatCurrency(product?.price)}
                 </p>
               </div>
               <div className="flex-shrink-0">

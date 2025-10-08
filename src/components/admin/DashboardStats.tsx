@@ -8,6 +8,7 @@ import {
   CurrencyDollarIcon 
 } from "@heroicons/react/24/outline";
 import { StatsService, DashboardStats } from "@/services/v2";
+import { formatCurrency } from "@/lib/storeConfig";
 
 export default function DashboardStats() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -65,7 +66,7 @@ export default function DashboardStats() {
     },
     {
       name: "Total Revenue",
-      value: `$${stats?.totalRevenue?.toLocaleString() || 0}`,
+      value: `${formatCurrency(stats?.totalRevenue || 0)}`,
       icon: CurrencyDollarIcon,
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",

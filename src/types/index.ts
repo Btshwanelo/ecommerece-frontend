@@ -232,31 +232,48 @@ export interface Cart {
 
 // Order types
 export interface OrderItem {
-  product: Product;
-  variant?: ProductVariant;
+  _id: string;
+  productId: Product;
+  productName: string;
+  variantName?: string;
+  sku: string;
   quantity: number;
-  price: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface OrderTotals {
+  subtotal: number;
+  taxAmount: number;
+  shippingAmount: number;
+  discountAmount: number;
   total: number;
+}
+
+export interface OrderPayment {
+  method: string;
+  status: 'pending' | 'paid' | 'failed' | 'refunded';
+}
+
+export interface OrderShipping {
+  method: string;
+  carrier: string;
+  estimatedDelivery: string;
 }
 
 export interface Order {
   _id: string;
   orderNumber: string;
-  user: string | User;
+  userId: string;
+  customerEmail: string;
   items: OrderItem[];
-  subtotal: number;
-  discount: number;
-  shipping: number;
-  tax: number;
-  total: number;
+  totals: OrderTotals;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
   shippingAddress: Address;
   billingAddress: Address;
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  paymentMethod: string;
-  trackingNumber?: string;
+  payment: OrderPayment;
+  shipping: OrderShipping;
   notes?: string;
-  deliveryOption?: DeliveryOption;
   createdAt: string;
   updatedAt: string;
 }
@@ -363,6 +380,18 @@ export interface FilterGroup {
 }
 
 // Search and filter types
+export interface OrderFilters {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded' | string;
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded' | string;
+  userId?: string;
+  createdAfter?: string;
+  createdBefore?: string;
+  search?: string;
+}
+
 export interface ProductFilters {
   categoryId?: string;
   brandId?: string;
@@ -402,6 +431,7 @@ export interface V2ApiResponse<T> {
   success: boolean;
   data?: T;
   product?: T; // For product responses
+  order?: T; // For order responses
   error?: string;
   message?: string;
 }
@@ -486,5 +516,136 @@ export interface V2AllAttributesResponse {
     fits: Fit[];
     occasions: Occasion[];
     collarTypes: CollarType[];
+  };
+}
+
+// Store Configuration Types
+export interface StoreConfig {
+  // Store Identity
+  store: {
+    name: string;
+    tagline?: string;
+    description?: string;
+    website?: string;
+    email: string;
+    phone?: string;
+    address?: {
+      street: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+    };
+  };
+
+  // Branding & Logos
+  branding: {
+    logo: {
+      primary: string; // Main logo URL
+      secondary?: string; // Alternative logo
+      favicon?: string; // Favicon URL
+      mobile?: string; // Mobile-optimized logo
+    };
+    colors: {
+      primary: string; // Main brand color
+      secondary: string; // Secondary brand color
+      accent: string; // Accent color
+      background: string; // Background color
+      surface: string; // Surface/card background
+      text: {
+        primary: string; // Primary text color
+        secondary: string; // Secondary text color
+        muted: string; // Muted text color
+      };
+      border: string; // Border color
+      success: string; // Success state color
+      warning: string; // Warning state color
+      error: string; // Error state color
+    };
+    fonts: {
+      primary: string; // Primary font family
+      secondary?: string; // Secondary font family
+    };
+  };
+
+  // Currency & Pricing
+  currency: {
+    code: string; // ISO currency code (e.g., 'USD', 'ZAR', 'EUR')
+    symbol: string; // Currency symbol (e.g., '$', 'R', '€')
+    position: 'before' | 'after'; // Symbol position
+    decimalPlaces: number; // Number of decimal places
+    thousandsSeparator: string; // Thousands separator (e.g., ',', '.')
+    decimalSeparator: string; // Decimal separator (e.g., '.', ',')
+  };
+
+  // Theme Settings
+  theme: {
+    mode: 'light' | 'dark' | 'auto'; // Theme mode
+    borderRadius: string; // Border radius for components
+    spacing: {
+      xs: string; // Extra small spacing
+      sm: string; // Small spacing
+      md: string; // Medium spacing
+      lg: string; // Large spacing
+      xl: string; // Extra large spacing
+    };
+    shadows: {
+      sm: string; // Small shadow
+      md: string; // Medium shadow
+      lg: string; // Large shadow
+    };
+  };
+
+  // Features & Functionality
+  features: {
+    enableReviews: boolean;
+    enableWishlist: boolean;
+    enableCompare: boolean;
+    enableNewsletter: boolean;
+    enableSocialLogin: boolean;
+    enableGuestCheckout: boolean;
+    enableMultiLanguage: boolean;
+    enableMultiCurrency: boolean;
+  };
+
+  // Social Media
+  social: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    linkedin?: string;
+    youtube?: string;
+    tiktok?: string;
+  };
+
+  // SEO & Meta
+  seo: {
+    defaultTitle: string;
+    defaultDescription: string;
+    defaultKeywords: string[];
+    ogImage?: string; // Open Graph image
+    twitterCard?: 'summary' | 'summary_large_image';
+  };
+
+  // Payment & Shipping
+  payment: {
+    methods: string[]; // Available payment methods
+    defaultMethod?: string;
+  };
+
+  shipping: {
+    freeShippingThreshold?: number; // Minimum amount for free shipping
+    defaultShippingCost?: number;
+    estimatedDeliveryDays: {
+      min: number;
+      max: number;
+    };
+  };
+
+  // Analytics & Tracking
+  analytics: {
+    googleAnalyticsId?: string;
+    googleTagManagerId?: string;
+    facebookPixelId?: string;
   };
 }

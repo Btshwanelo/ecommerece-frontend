@@ -8,6 +8,7 @@ import { CheckCircle, ArrowLeft } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { OrderService, CartService } from "@/services/v2";
 import { PayfastService } from "@/services/v2/payfastService";
+import { formatCurrency } from "@/lib/storeConfig";
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
@@ -149,7 +150,7 @@ export default function PaymentSuccessPage() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Total Amount:</span>
                 <span className="font-bold text-gray-900">
-                  R{(order.totals?.total || 0).toFixed(2)}
+                  {formatCurrency(order.totals?.total || 0)}
                 </span>
               </div>
               <div className="flex justify-between">
