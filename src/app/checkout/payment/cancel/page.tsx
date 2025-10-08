@@ -29,29 +29,15 @@ export default function PaymentCancelPage() {
       try {
         setLoading(true);
         
-        // Handle the payment cancellation
-        const result = await PayfastService.handlePaymentReturn(
-          orderId,
-          'cancel',
-          Object.fromEntries(searchParams.entries())
-        );
-
-        if (!result.success) {
-          setError(result.message);
-          setLoading(false);
-          return;
-        }
-
-        // Fetch order details by order number
-        const response = await OrderService.getOrderByNumber(orderId);
-        if (response.success && response.order) {
-          setOrder(response.order);
-        } else {
-          setError(response.error || "Failed to load order details.");
-        }
+        // Clear checkout data since payment was cancelled
+        sessionStorage.removeItem("checkoutData");
+        
+        // No order was created since payment was cancelled
+        setOrder(null);
+        
+        setLoading(false);
       } catch (e: any) {
         setError(e?.message || "Failed to process payment cancellation.");
-      } finally {
         setLoading(false);
       }
     };
@@ -107,33 +93,31 @@ export default function PaymentCancelPage() {
           Your payment was cancelled. No charges have been made to your account.
         </p>
 
-        {order && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Order Details
-            </h2>
-            <div className="space-y-2 text-left">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Order Number:</span>
-                <span className="font-medium text-gray-900">
-                  {order.orderNumber || order._id}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Amount:</span>
-                <span className="font-bold text-gray-900">
-                  R{(order.totals?.total || 0).toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Order Status:</span>
-                <span className="font-medium text-orange-600 capitalize">
-                  Cancelled
-                </span>
-              </div>
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            Payment Cancelled
+          </h2>
+          <div className="space-y-2 text-left">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Status:</span>
+              <span className="font-medium text-orange-600 capitalize">
+                Payment Cancelled
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Order:</span>
+              <span className="font-medium text-gray-900">
+                No order created
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Charges:</span>
+              <span className="font-medium text-green-600">
+                No charges made
+              </span>
             </div>
           </div>
-        )}
+        </div>
 
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Link

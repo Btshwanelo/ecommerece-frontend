@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { CheckCircle, ArrowLeft } from "lucide-react";
 import Layout from "@/components/layout/Layout";
-import { OrderService } from "@/services/v2";
+import { OrderService, CartService } from "@/services/v2";
 import { PayfastService } from "@/services/v2/payfastService";
 
 export default function PaymentSuccessPage() {
@@ -29,27 +29,54 @@ export default function PaymentSuccessPage() {
       try {
         setLoading(true);
         
-        // Handle the payment return
-        const result = await PayfastService.handlePaymentReturn(
-          orderId,
-          'success',
-          Object.fromEntries(searchParams.entries())
-        );
-
-        if (!result.success) {
-          setError(result.message);
+        // Get checkout data from sessionStorage
+        const storedCheckoutData = sessionStorage.getItem("checkoutData");
+        if (!storedCheckoutData) {
+          setError("Checkout data not found. Please contact support.");
           setLoading(false);
           return;
         }
 
-        // Fetch updated order details by order number
-        const response = await OrderService.getOrderByNumber(orderId);
-        if (response.success && response.order) {
-          setOrder(response.order);
+        const checkoutData = JSON.parse(storedCheckoutData);
+        console.log("Checkout data for order creation:", checkoutData);
+
+        // Create the order with all details after successful payment
+        const orderResponse = await OrderService.completeCheckout({
+          deliveryOptionId: checkoutData.deliveryOptionId,
+          paymentMethod: "payfast",
+          paymentStatus: "paid",
+          address: checkoutData.useExistingAddress ? undefined : {
+            fullName: checkoutData.shippingAddress.fullName || 
+              `${checkoutData.shippingAddress.firstName || ""} ${checkoutData.shippingAddress.lastName || ""}`.trim(),
+            phone: checkoutData.shippingAddress.phone || checkoutData.userContact.phone || "",
+            street: checkoutData.shippingAddress.street || checkoutData.shippingAddress.addressLine1 || "",
+            apartment: checkoutData.shippingAddress.apartment || checkoutData.shippingAddress.addressLine2 || "",
+            city: checkoutData.shippingAddress.city || "",
+            state: checkoutData.shippingAddress.state || "",
+            postalCode: checkoutData.shippingAddress.postalCode || "",
+            country: checkoutData.shippingAddress.country || "US",
+          },
+          addressId: checkoutData.useExistingAddress ? checkoutData.selectedAddressId : undefined,
+          notes: `Payment processed via Payfast. Contact: ${checkoutData.userContact.email}`,
+        });
+
+        if (orderResponse.success && orderResponse.order) {
+          setOrder(orderResponse.order);
+          
+          // Clear checkout data after successful order creation
+          sessionStorage.removeItem("checkoutData");
+          
+          // Clear cart after successful order
+          try {
+            await CartService.clearCart();
+          } catch (e) {
+            console.warn("Failed to clear cart:", e);
+          }
         } else {
-          setError(response.error || "Failed to load order details.");
+          setError(orderResponse.error || "Failed to create order after payment.");
         }
       } catch (e: any) {
+        console.error("Payment success processing error:", e);
         setError(e?.message || "Failed to process payment success.");
       } finally {
         setLoading(false);

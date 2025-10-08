@@ -42,6 +42,14 @@ export default function CheckoutPage() {
     country: "US",
   });
 
+  // User contact details
+  const [userContact, setUserContact] = useState({
+    email: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+  });
+
   const [deliveryOptions, setDeliveryOptions] = useState<any[]>([]);
   const [selectedDeliveryId, setSelectedDeliveryId] = useState<string>("");
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -136,10 +144,28 @@ export default function CheckoutPage() {
     }
   };
 
-  // Check if user is logged in
+  // Check if user is logged in and populate contact details
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
+
+    // Populate user contact details if logged in
+    if (token) {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          setUserContact({
+            email: user.email || "",
+            firstName: user.profile?.firstName || "",
+            lastName: user.profile?.lastName || "",
+            phone: user.profile?.phone || "",
+          });
+        } catch (e) {
+          console.error("Error parsing user data:", e);
+        }
+      }
+    }
   }, []);
 
   // Load cart, delivery options, and user addresses
@@ -249,6 +275,7 @@ export default function CheckoutPage() {
     console.log("Use existing address:", useExistingAddress);
     console.log("Selected address ID:", selectedAddressId);
     console.log("Address form data:", address);
+    console.log("User contact:", userContact);
 
     if (!cart) return;
     if (!selectedDeliveryId) {
@@ -261,6 +288,14 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Validate user contact details
+    if (!userContact.email || !userContact.firstName || !userContact.lastName) {
+      setOrderMessage({
+        type: "error",
+        message: "Please fill in all required contact details (email, first name, last name)",
+      });
+      return;
+    }
 
     // Address validation
     let shippingAddress;
@@ -307,133 +342,41 @@ export default function CheckoutPage() {
 
     setPlacingOrder(true);
     setOrderMessage(null);
+    
     try {
-      // Step 1: Initiate checkout (creates order in pending state)
-      const initiateRes = await OrderService.initiateCheckout({});
-      console.log("Initiate checkout response:", initiateRes);
-
-      if (!initiateRes.success) {
-        setOrderMessage({
-          type: "error",
-          message: initiateRes.error || "Failed to initiate checkout",
-        });
-        setPlacingOrder(false);
-        return;
-      }
-
-      const orderId =
-        (initiateRes as any).orderId ||
-        (initiateRes as any).order?._id ||
-        (initiateRes as any).data?._id ||
-        (initiateRes as any).data?.orderId ||
-        (initiateRes as any).checkout?.orderId ||
-        (initiateRes as any).checkout?._id ||
-        (initiateRes as any).checkout?.orderNumber;
-      console.log("Extracted order ID:", orderId);
-
-      if (!orderId) {
-        setOrderMessage({
-          type: "error",
-          message: "Failed to get order ID from checkout initiation",
-        });
-        setPlacingOrder(false);
-        return;
-      }
-
-      // Store checkout data for payment step
+      // Generate a temporary order ID for the payment flow
+      const tempOrderId = `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Store all checkout data for payment step (no API call yet)
       const checkoutData = {
-        orderId,
-        deliveryOptionId:
-          selectedDeliveryId === "default-delivery"
-            ? undefined
-            : selectedDeliveryId,
-        notes: "",
-        amount: cart?.totals?.total || 0, // Include cart total
-        totals: cart?.totals, // Include full totals object
+        tempOrderId,
+        cart: cart,
+        deliveryOptionId: selectedDeliveryId === "default-delivery" ? undefined : selectedDeliveryId,
+        userContact: userContact,
+        shippingAddress: shippingAddress,
+        useExistingAddress: useExistingAddress,
+        selectedAddressId: selectedAddressId,
+        isLoggedIn: isLoggedIn,
+        amount: cart?.totals?.total || 0,
+        totals: cart?.totals,
       };
-
-      // Add address information - prefer addressId if available
-      if (useExistingAddress && selectedAddressId) {
-        checkoutData.addressId = selectedAddressId;
-      } else if (!useExistingAddress) {
-        // For new addresses, always try to create address for logged-in users
-        if (isLoggedIn) {
-          console.log("Creating address for checkout...");
-          const tempAddressId = await saveAddressToAccount(address);
-          if (tempAddressId) {
-            console.log(
-              "Address created successfully, using addressId:",
-              tempAddressId
-            );
-            checkoutData.addressId = tempAddressId;
-          } else {
-            console.log(
-              "Failed to create address, using address data directly"
-            );
-            // Fallback: pass address data directly
-            checkoutData.address = {
-              fullName:
-                (shippingAddress as any).fullName ||
-                `${(shippingAddress as any).firstName || ""} ${
-                  (shippingAddress as any).lastName || ""
-                }`.trim(),
-              phone: shippingAddress.phone || "",
-              street:
-                (shippingAddress as any).street ||
-                (shippingAddress as any).addressLine1 ||
-                "",
-              apartment:
-                (shippingAddress as any).apartment ||
-                (shippingAddress as any).addressLine2 ||
-                "",
-              city: shippingAddress.city || "",
-              state: shippingAddress.state || "",
-              postalCode: shippingAddress.postalCode || "",
-              country: shippingAddress.country || "US",
-            };
-          }
-        } else {
-          console.log("User not logged in, using address data directly");
-          // Pass address data directly for guest users
-          checkoutData.address = {
-            fullName:
-              (shippingAddress as any).fullName ||
-              `${(shippingAddress as any).firstName || ""} ${
-                (shippingAddress as any).lastName || ""
-              }`.trim(),
-            phone: shippingAddress.phone || "",
-            street:
-              (shippingAddress as any).street ||
-              (shippingAddress as any).addressLine1 ||
-              "",
-            apartment:
-              (shippingAddress as any).apartment ||
-              (shippingAddress as any).addressLine2 ||
-              "",
-            city: shippingAddress.city || "",
-            state: shippingAddress.state || "",
-            postalCode: shippingAddress.postalCode || "",
-            country: shippingAddress.country || "US",
-          };
-        }
-      }
 
       // Store checkout data in sessionStorage for payment step
       sessionStorage.setItem('checkoutData', JSON.stringify(checkoutData));
 
       setOrderMessage({
         type: "success",
-        message: "Checkout initiated! Redirecting to payment...",
+        message: "Checkout details saved! Redirecting to payment...",
       });
 
-      // Redirect to payment page with order ID
+      // Redirect to payment page with temp order ID
       setTimeout(() => {
-        router.push(`/checkout/payment?orderId=${orderId}`);
+        router.push(`/checkout/payment?orderId=${tempOrderId}`);
       }, 1500);
     } catch (e: any) {
       setOrderMessage({
         type: "error",
-        message: e?.response?.data?.error || "Checkout failed",
+        message: e?.message || "Failed to prepare checkout data",
       });
     } finally {
       setPlacingOrder(false);
@@ -494,8 +437,77 @@ export default function CheckoutPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left: Address and Delivery */}
+            {/* Left: Contact, Address and Delivery */}
             <div className="lg:col-span-2 space-y-6">
+              {/* Contact Information */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <CreditCard className="h-5 w-5 text-gray-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Contact Information
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={userContact.firstName}
+                      onChange={(e) =>
+                        setUserContact({ ...userContact, firstName: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={userContact.lastName}
+                      onChange={(e) =>
+                        setUserContact({ ...userContact, lastName: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      value={userContact.email}
+                      onChange={(e) =>
+                        setUserContact({ ...userContact, email: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={userContact.phone}
+                      onChange={(e) =>
+                        setUserContact({ ...userContact, phone: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      placeholder="+27 82 123 4567"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Shipping Address */}
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -840,7 +852,7 @@ export default function CheckoutPage() {
                   disabled={placingOrder}
                   className="mt-6 w-full bg-black text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800 disabled:opacity-50"
                 >
-                  {placingOrder ? "Creating Order…" : "Create Order & Proceed to Payment"}
+                  {placingOrder ? "Preparing Payment…" : "Proceed to Payment"}
                 </button>
 
                 <Link

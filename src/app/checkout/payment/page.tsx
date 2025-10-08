@@ -131,35 +131,19 @@ export default function PaymentPage() {
 
   const processPayfastPayment = async (checkoutData: any) => {
     try {
-      // Get user details from localStorage or checkout data
-      const user = localStorage.getItem("user");
-      let userDetails = {
+      // Use contact details from checkout data
+      const userDetails = checkoutData.userContact || {
         firstName: "Customer",
-        lastName: "User",
+        lastName: "User", 
         email: "customer@example.com",
         phone: "",
       };
-
-      if (user) {
-        try {
-          const userData = JSON.parse(user);
-          userDetails = {
-            firstName: userData.profile?.firstName || "Customer",
-            lastName: userData.profile?.lastName || "User",
-            email: userData.email || "customer@example.com",
-            phone: userData.profile?.phone || "",
-          };
-        } catch (e) {
-          console.error("Error parsing user data:", e);
-        }
-      }
 
       // Validate required fields
       if (!userDetails.email || userDetails.email === "customer@example.com") {
         setPaymentMessage({
           type: "error",
-          message:
-            "Please ensure you have a valid email address in your profile.",
+          message: "Please ensure you have a valid email address.",
         });
         setProcessingPayment(false);
         return;
@@ -176,6 +160,7 @@ export default function PaymentPage() {
       }
 
       console.log("Order total for Payfast:", orderTotal);
+      console.log("User details from checkout:", userDetails);
 
       // Simple PayFast payment data - basic fields with return URLs
       const paymentData: Record<string, any> = {
@@ -213,8 +198,8 @@ export default function PaymentPage() {
         message: "Redirecting to Payfast for secure payment...",
       });
 
-      // Clear checkout data from sessionStorage
-      sessionStorage.removeItem("checkoutData");
+      // DON'T clear checkout data yet - we need it for order creation after payment
+      // sessionStorage.removeItem("checkoutData");
 
       // Submit form
       form.submit();

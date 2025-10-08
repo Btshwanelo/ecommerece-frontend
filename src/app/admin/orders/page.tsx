@@ -337,9 +337,7 @@ export default function OrdersPage() {
                           {order.shippingAddress?.lastName}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {typeof order.user === "object"
-                            ? order.user.email
-                            : "N/A"}
+                          {order.customerEmail}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -533,7 +531,7 @@ export default function OrdersPage() {
                         Total Amount
                       </label>
                       <p className="text-sm text-gray-900 font-medium">
-                        ${selectedOrder.total.toFixed(2)}
+                        ${selectedOrder.total?.toFixed(2)}
                       </p>
                     </div>
                     <div>
@@ -573,9 +571,9 @@ export default function OrdersPage() {
                       >
                         <div className="flex-1">
                           <p className="text-sm font-medium text-gray-900">
-                            {item.product.name}
+                            {item?.product?.name}
                           </p>
-                          {item.variant && (
+                          {item?.variant && (
                             <p className="text-xs text-gray-500">
                               Variant: {item.variant.sku}
                             </p>
@@ -586,10 +584,10 @@ export default function OrdersPage() {
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-medium text-gray-900">
-                            ${item.total.toFixed(2)}
+                            ${item.total?.toFixed(2)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            ${item.price.toFixed(2)} each
+                            ${item.price?.toFixed(2)} each
                           </p>
                         </div>
                       </div>
