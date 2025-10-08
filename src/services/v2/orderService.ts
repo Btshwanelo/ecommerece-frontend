@@ -42,6 +42,8 @@ export interface CheckoutCompleteData {
     postalCode: string;
     country: string;
   };
+  paymentStatus?: string;
+  payfastData?: Record<string, string>;
 }
 
 export class OrderService {
@@ -62,6 +64,12 @@ export class OrderService {
   // Get order by ID
   static async getOrderById(id: string): Promise<V2ApiResponse<Order>> {
     const response = await api.get(endpoints.orders.detail(id));
+    return response.data;
+  }
+
+  // Get order by order number
+  static async getOrderByNumber(orderNumber: string): Promise<V2ApiResponse<Order>> {
+    const response = await api.get(`/orders/number/${orderNumber}`);
     return response.data;
   }
 

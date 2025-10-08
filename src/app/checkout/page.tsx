@@ -348,6 +348,8 @@ export default function CheckoutPage() {
             ? undefined
             : selectedDeliveryId,
         notes: "",
+        amount: cart?.totals?.total || 0, // Include cart total
+        totals: cart?.totals, // Include full totals object
       };
 
       // Add address information - prefer addressId if available

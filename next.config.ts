@@ -23,6 +23,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Allow development on any port
+  experimental: {
+    allowedDevOrigins: ['localhost'],
+  },
 };
 
 export default nextConfig;

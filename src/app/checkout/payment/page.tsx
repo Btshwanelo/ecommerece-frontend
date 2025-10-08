@@ -15,18 +15,20 @@ export default function PaymentPage() {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState<string>("cod");
+    useState<string>("payfast");
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [cardDetails, setCardDetails] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardholderName: "",
-  });
+  const [orderTotal, setOrderTotal] = useState(0);
+
+  // PayFast configuration - simple integration
+  const PAYFAST_CONFIG = {
+    merchant_id: "10038198",
+    merchant_key: "8yshtxb2mu1oa",
+    sandbox: true, // Sandbox mode for testing
+  };
 
   useEffect(() => {
     if (!orderId) {
@@ -37,7 +39,30 @@ export default function PaymentPage() {
     // Retrieve checkout data from sessionStorage
     const storedCheckoutData = sessionStorage.getItem("checkoutData");
     if (storedCheckoutData) {
-      console.log("Retrieved checkout data:", JSON.parse(storedCheckoutData));
+      const checkoutData = JSON.parse(storedCheckoutData);
+      console.log("Retrieved checkout data:", checkoutData);
+
+      // Get the actual order total
+      let total = 0;
+
+      if (checkoutData.amount) {
+        total = parseFloat(checkoutData.amount);
+      } else if (checkoutData.totals?.total) {
+        total = parseFloat(checkoutData.totals.total);
+      } else {
+        // Fallback: try to get from cart in sessionStorage
+        const cartData = sessionStorage.getItem("cart");
+        if (cartData) {
+          try {
+            const cart = JSON.parse(cartData);
+            total = parseFloat(cart.totals?.total || 0);
+          } catch (e) {
+            console.error("Error parsing cart data:", e);
+          }
+        }
+      }
+
+      setOrderTotal(total);
     } else {
       console.log("No checkout data found in sessionStorage");
     }
@@ -64,9 +89,12 @@ export default function PaymentPage() {
       }
 
       const checkoutData = JSON.parse(storedCheckoutData);
+      console.log("Checkout data received:", checkoutData);
 
-      // Complete the order with payment method
-      if (selectedPaymentMethod === "cod") {
+      // Handle payment based on selected method
+      if (selectedPaymentMethod === "payfast") {
+        await processPayfastPayment(checkoutData);
+      } else if (selectedPaymentMethod === "cod") {
         const response = await OrderService.completeCheckout({
           ...checkoutData,
           paymentMethod: "cod",
@@ -78,40 +106,8 @@ export default function PaymentPage() {
             message: "Order placed successfully! You will pay on delivery.",
           });
 
-          // Clear checkout data from sessionStorage
           sessionStorage.removeItem("checkoutData");
 
-          // Redirect to success page after a delay
-          setTimeout(() => {
-            router.push(`/order-success?orderId=${orderId}`);
-          }, 2000);
-        } else {
-          setPaymentMessage({
-            type: "error",
-            message: response.error || "Payment failed. Please try again.",
-          });
-        }
-      } else if (selectedPaymentMethod === "card") {
-        // For card payments, integrate with payment gateway
-        await processCardPayment(checkoutData);
-      } else if (selectedPaymentMethod === "bank_transfer") {
-        // For bank transfer, complete order with bank transfer payment method
-        const response = await OrderService.completeCheckout({
-          ...checkoutData,
-          paymentMethod: "bank_transfer",
-        });
-
-        if (response.success) {
-          setPaymentMessage({
-            type: "success",
-            message:
-              "Order placed successfully! Please complete the bank transfer using the details provided.",
-          });
-
-          // Clear checkout data from sessionStorage
-          sessionStorage.removeItem("checkoutData");
-
-          // Redirect to success page after a delay
           setTimeout(() => {
             router.push(`/order-success?orderId=${orderId}`);
           }, 2000);
@@ -133,82 +129,103 @@ export default function PaymentPage() {
     }
   };
 
-  const processCardPayment = async (checkoutData: any) => {
-    // Validate card details
-    if (
-      !cardDetails.cardNumber ||
-      !cardDetails.expiryDate ||
-      !cardDetails.cvv ||
-      !cardDetails.cardholderName
-    ) {
-      setPaymentMessage({
-        type: "error",
-        message: "Please fill in all card details.",
+  const processPayfastPayment = async (checkoutData: any) => {
+    try {
+      // Get user details from localStorage or checkout data
+      const user = localStorage.getItem("user");
+      let userDetails = {
+        firstName: "Customer",
+        lastName: "User",
+        email: "customer@example.com",
+        phone: "",
+      };
+
+      if (user) {
+        try {
+          const userData = JSON.parse(user);
+          userDetails = {
+            firstName: userData.profile?.firstName || "Customer",
+            lastName: userData.profile?.lastName || "User",
+            email: userData.email || "customer@example.com",
+            phone: userData.profile?.phone || "",
+          };
+        } catch (e) {
+          console.error("Error parsing user data:", e);
+        }
+      }
+
+      // Validate required fields
+      if (!userDetails.email || userDetails.email === "customer@example.com") {
+        setPaymentMessage({
+          type: "error",
+          message:
+            "Please ensure you have a valid email address in your profile.",
+        });
+        setProcessingPayment(false);
+        return;
+      }
+
+      // Validate amount
+      if (orderTotal <= 0) {
+        setPaymentMessage({
+          type: "error",
+          message: "Invalid order amount. Please try again.",
+        });
+        setProcessingPayment(false);
+        return;
+      }
+
+      console.log("Order total for Payfast:", orderTotal);
+
+      // Simple PayFast payment data - basic fields with return URLs
+      const paymentData: Record<string, any> = {
+        merchant_id: PAYFAST_CONFIG.merchant_id,
+        merchant_key: PAYFAST_CONFIG.merchant_key,
+        amount: orderTotal.toFixed(2),
+        item_name: `Order ${orderId}`,
+        return_url: `${window.location.origin}/checkout/payment/success?orderId=${orderId}`,
+        cancel_url: `${window.location.origin}/checkout/payment/cancel?orderId=${orderId}`,
+      };
+
+      console.log("Simple Payment Data:", paymentData);
+
+      // Create form and submit to PayFast
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = PAYFAST_CONFIG.sandbox
+        ? "https://sandbox.payfast.co.za/eng/process"
+        : "https://www.payfast.co.za/eng/process";
+
+      // Add form fields
+      Object.keys(paymentData).forEach((key) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = paymentData[key];
+        form.appendChild(input);
       });
-      return;
-    }
 
-    // In a real implementation, you would:
-    // 1. Integrate with payment gateway (Stripe, PayPal, etc.)
-    // 2. Process the payment
-    // 3. Handle the response
+      console.log("Submitting simple form to PayFast:", form.action);
+      document.body.appendChild(form);
 
-    // For now, we'll simulate a successful payment
-    console.log("Processing card payment:", cardDetails);
-
-    // Simulate payment processing delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    const response = await OrderService.completeCheckout({
-      ...checkoutData,
-      paymentMethod: "card",
-      paymentDetails: {
-        cardLast4: cardDetails.cardNumber.slice(-4),
-        cardType: "visa", // You would determine this from the card number
-      },
-    });
-
-    if (response.success) {
       setPaymentMessage({
         type: "success",
-        message: "Payment successful! Your order has been placed.",
+        message: "Redirecting to Payfast for secure payment...",
       });
 
       // Clear checkout data from sessionStorage
       sessionStorage.removeItem("checkoutData");
 
-      setTimeout(() => {
-        router.push(`/order-success?orderId=${orderId}`);
-      }, 2000);
-    } else {
+      // Submit form
+      form.submit();
+    } catch (error: any) {
+      console.error("Payfast payment error:", error);
       setPaymentMessage({
         type: "error",
-        message: response.error || "Payment failed. Please try again.",
+        message: error.message || "Payment failed. Please try again.",
       });
+      setProcessingPayment(false);
     }
-  };
-
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || "";
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    if (parts.length) {
-      return parts.join(" ");
-    } else {
-      return v;
-    }
-  };
-
-  const formatExpiryDate = (value: string) => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-    if (v.length >= 2) {
-      return v.substring(0, 2) + "/" + v.substring(2, 4);
-    }
-    return v;
   };
 
   if (!orderId) {
@@ -263,7 +280,7 @@ export default function PaymentPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {/* Cash on Delivery */}
+                  {/* Payfast Payment */}
                   <label className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
                     <div className="flex items-center gap-3">
                       <input
@@ -280,7 +297,7 @@ export default function PaymentPage() {
                           Payfast
                         </p>
                         <p className="text-xs text-gray-500">
-                          Pay securely with your card{" "}
+                          Pay securely with your card
                         </p>
                       </div>
                     </div>
@@ -296,173 +313,39 @@ export default function PaymentPage() {
                   </label>
                 </div>
 
+                {/* Phone Number Input for Payfast */}
+                {selectedPaymentMethod === "payfast" && (
+                  <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                      Contact Information
+                    </h3>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-center gap-2 mt-4">
                   <img
                     src="/mastercard.svg"
-                    alt="Payfast"
+                    alt="Mastercard"
                     width={40}
                     height={40}
                     className="mt-2"
                   />
                   <img
                     src="/visa.svg"
-                    alt="Payfast"
+                    alt="Visa"
                     width={40}
                     height={40}
                     className="mt-2"
                   />
                   <img
                     src="/maestro.svg"
-                    alt="Payfast"
+                    alt="Maestro"
                     width={40}
                     height={40}
                     className="mt-2"
                   />
                 </div>
               </div>
-
-              {/* Card Details Form */}
-              {selectedPaymentMethod === "card" && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="bg-white rounded-lg shadow-sm p-6"
-                >
-                  <div className="flex items-center gap-3 mb-6">
-                    <Lock className="h-5 w-5 text-gray-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Card Details
-                    </h3>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Card Number
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="1234 5678 9012 3456"
-                        value={cardDetails.cardNumber}
-                        onChange={(e) =>
-                          setCardDetails({
-                            ...cardDetails,
-                            cardNumber: formatCardNumber(e.target.value),
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                        maxLength={19}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Expiry Date
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="MM/YY"
-                          value={cardDetails.expiryDate}
-                          onChange={(e) =>
-                            setCardDetails({
-                              ...cardDetails,
-                              expiryDate: formatExpiryDate(e.target.value),
-                            })
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                          maxLength={5}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          CVV
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="123"
-                          value={cardDetails.cvv}
-                          onChange={(e) =>
-                            setCardDetails({
-                              ...cardDetails,
-                              cvv: e.target.value.replace(/\D/g, ""),
-                            })
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                          maxLength={4}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Cardholder Name
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="John Doe"
-                        value={cardDetails.cardholderName}
-                        onChange={(e) =>
-                          setCardDetails({
-                            ...cardDetails,
-                            cardholderName: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Bank Transfer Details */}
-              {selectedPaymentMethod === "bank_transfer" && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="bg-white rounded-lg shadow-sm p-6"
-                >
-                  <div className="flex items-center gap-3 mb-6">
-                    <CreditCard className="h-5 w-5 text-gray-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Bank Transfer Details
-                    </h3>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Bank Name:</span>
-                      <span className="text-sm font-medium">
-                        Your Bank Name
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">
-                        Account Number:
-                      </span>
-                      <span className="text-sm font-medium">1234567890</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">
-                        Routing Number:
-                      </span>
-                      <span className="text-sm font-medium">987654321</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Reference:</span>
-                      <span className="text-sm font-medium">{orderId}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <strong>Important:</strong> Please include the order ID (
-                      {orderId}) as the payment reference. Your order will be
-                      processed once the payment is confirmed.
-                    </p>
-                  </div>
-                </motion.div>
-              )}
             </div>
 
             {/* Order Summary */}
@@ -473,24 +356,14 @@ export default function PaymentPage() {
                 </h2>
 
                 <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium">$0.00</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Shipping:</span>
-                    <span className="font-medium">$0.00</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Tax:</span>
-                    <span className="font-medium">$0.00</span>
-                  </div>
                   <div className="border-t pt-3">
                     <div className="flex justify-between">
                       <span className="font-semibold text-gray-900">
                         Total:
                       </span>
-                      <span className="font-semibold text-gray-900">$0.00</span>
+                      <span className="font-semibold text-gray-900">
+                        R{orderTotal.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -518,7 +391,7 @@ export default function PaymentPage() {
                   disabled={processingPayment}
                   className="w-full bg-black text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {processingPayment ? "Processing..." : "Complete Payment"}
+                  {processingPayment ? "Processing..." : "Pay with Payfast (Simple)"}
                 </button>
               </div>
             </div>
