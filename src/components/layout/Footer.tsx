@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { useStoreConfig } from '@/hooks/useStoreConfig';
 
 const Footer = () => {
+  const { storeName, storeTagline, socialLinks, storeWebsite } = useStoreConfig();
+
   const footerLinks = {
     products: [
       { name: 'Shoes', href: '/products?category=shoes' },
@@ -26,12 +29,12 @@ const Footer = () => {
     ],
   };
 
-  const socialLinks = [
-    { name: 'Facebook', icon: Facebook, href: 'https://facebook.com' },
-    { name: 'Twitter', icon: Twitter, href: 'https://twitter.com' },
-    { name: 'Instagram', icon: Instagram, href: 'https://instagram.com' },
-    { name: 'YouTube', icon: Youtube, href: 'https://youtube.com' },
-  ];
+  const socialIcons = {
+    facebook: Facebook,
+    twitter: Twitter,
+    instagram: Instagram,
+    youtube: Youtube,
+  };
 
   return (
     <footer className="bg-black text-white">
@@ -39,22 +42,27 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1">
-            <h3 className="text-2xl font-bold mb-4">NIKE</h3>
-            <p className="text-gray-400 text-sm mb-6">
-              Just Do It. The future of sport is here.
-            </p>
+            <h3 className="text-2xl font-bold mb-4">{storeName}</h3>
+            {storeTagline && (
+              <p className="text-gray-400 text-sm mb-6">
+                {storeTagline}
+              </p>
+            )}
             <div className="flex space-x-4">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.name}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <social.icon className="h-5 w-5" />
-                </a>
-              ))}
+              {socialLinks.map((social) => {
+                const IconComponent = socialIcons[social.platform as keyof typeof socialIcons];
+                return IconComponent ? (
+                  <a
+                    key={social.platform}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <IconComponent className="h-5 w-5" />
+                  </a>
+                ) : null;
+              })}
             </div>
           </div>
 
@@ -125,7 +133,7 @@ const Footer = () => {
               </Link>
             </div>
             <p className="text-sm text-gray-400">
-              © 2024 Nike, Inc. All rights reserved.
+              © {new Date().getFullYear()} {storeName}. All rights reserved.
             </p>
           </div>
         </div>

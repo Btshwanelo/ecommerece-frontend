@@ -53,7 +53,7 @@ export interface StoreConfig {
   currency: {
     code: string; // ISO currency code (e.g., 'USD', 'ZAR', 'EUR')
     symbol: string; // Currency symbol (e.g., '$', 'R', '€')
-    position: 'before' | 'after'; // Symbol position
+    position: "before" | "after"; // Symbol position
     decimalPlaces: number; // Number of decimal places
     thousandsSeparator: string; // Thousands separator (e.g., ',', '.')
     decimalSeparator: string; // Decimal separator (e.g., '.', ',')
@@ -61,7 +61,7 @@ export interface StoreConfig {
 
   // Theme Settings
   theme: {
-    mode: 'light' | 'dark' | 'auto'; // Theme mode
+    mode: "light" | "dark" | "auto"; // Theme mode
     borderRadius: string; // Border radius for components
     spacing: {
       xs: string; // Extra small spacing
@@ -105,7 +105,7 @@ export interface StoreConfig {
     defaultDescription: string;
     defaultKeywords: string[];
     ogImage?: string; // Open Graph image
-    twitterCard?: 'summary' | 'summary_large_image';
+    twitterCard?: "summary" | "summary_large_image";
   };
 
   // Payment & Shipping
@@ -145,16 +145,16 @@ export const defaultStoreConfig: StoreConfig = {
       city: "New York",
       state: "NY",
       postalCode: "10001",
-      country: "United States"
-    }
+      country: "United States",
+    },
   },
 
   branding: {
     logo: {
-      primary: "/logo.png",
-      secondary: "/logo-white.png",
+      primary: "/maestro.svg",
+      secondary: "/maestro.svg",
       favicon: "/favicon.ico",
-      mobile: "/logo-mobile.png"
+      mobile: "/maestro.svg",
     },
     colors: {
       primary: "#3B82F6", // Blue
@@ -165,17 +165,17 @@ export const defaultStoreConfig: StoreConfig = {
       text: {
         primary: "#1F2937",
         secondary: "#6B7280",
-        muted: "#9CA3AF"
+        muted: "#9CA3AF",
       },
       border: "#E5E7EB",
       success: "#10B981",
       warning: "#F59E0B",
-      error: "#EF4444"
+      error: "#EF4444",
     },
     fonts: {
       primary: "Inter, system-ui, sans-serif",
-      secondary: "Georgia, serif"
-    }
+      secondary: "Georgia, serif",
+    },
   },
 
   currency: {
@@ -184,7 +184,7 @@ export const defaultStoreConfig: StoreConfig = {
     position: "before",
     decimalPlaces: 2,
     thousandsSeparator: ",",
-    decimalSeparator: "."
+    decimalSeparator: ".",
   },
 
   theme: {
@@ -195,13 +195,13 @@ export const defaultStoreConfig: StoreConfig = {
       sm: "8px",
       md: "16px",
       lg: "24px",
-      xl: "32px"
+      xl: "32px",
     },
     shadows: {
       sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
       md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-      lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
-    }
+      lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+    },
   },
 
   features: {
@@ -212,27 +212,35 @@ export const defaultStoreConfig: StoreConfig = {
     enableSocialLogin: false,
     enableGuestCheckout: true,
     enableMultiLanguage: false,
-    enableMultiCurrency: false
+    enableMultiCurrency: false,
   },
 
   social: {
     facebook: "https://facebook.com/fashionstore",
     twitter: "https://twitter.com/fashionstore",
     instagram: "https://instagram.com/fashionstore",
-    linkedin: "https://linkedin.com/company/fashionstore"
+    linkedin: "https://linkedin.com/company/fashionstore",
   },
 
   seo: {
     defaultTitle: "Fashion Store - Your Style, Our Passion",
-    defaultDescription: "Discover the latest fashion trends and timeless classics. Shop quality clothing, shoes, and accessories for men and women.",
-    defaultKeywords: ["fashion", "clothing", "shoes", "accessories", "style", "trends"],
+    defaultDescription:
+      "Discover the latest fashion trends and timeless classics. Shop quality clothing, shoes, and accessories for men and women.",
+    defaultKeywords: [
+      "fashion",
+      "clothing",
+      "shoes",
+      "accessories",
+      "style",
+      "trends",
+    ],
     ogImage: "/og-image.jpg",
-    twitterCard: "summary_large_image"
+    twitterCard: "summary_large_image",
   },
 
   payment: {
     methods: ["credit_card", "paypal", "apple_pay", "google_pay"],
-    defaultMethod: "credit_card"
+    defaultMethod: "credit_card",
   },
 
   shipping: {
@@ -240,15 +248,15 @@ export const defaultStoreConfig: StoreConfig = {
     defaultShippingCost: 9.99,
     estimatedDeliveryDays: {
       min: 3,
-      max: 7
-    }
+      max: 7,
+    },
   },
 
   analytics: {
     googleAnalyticsId: undefined,
     googleTagManagerId: undefined,
-    facebookPixelId: undefined
-  }
+    facebookPixelId: undefined,
+  },
 };
 
 // Current store configuration (can be overridden)
@@ -257,24 +265,18 @@ export const storeConfig: StoreConfig = {
   // Override specific settings here
   store: {
     ...defaultStoreConfig.store,
-    name: "Your Store Name", // Change this
-    email: "info@yourstore.com", // Change this
   },
-  
+
   currency: {
     ...defaultStoreConfig.currency,
-    code: "ZAR", // Change to your currency
-    symbol: "R", // Change to your currency symbol
   },
 
   branding: {
     ...defaultStoreConfig.branding,
     colors: {
       ...defaultStoreConfig.branding.colors,
-      primary: "#2563EB", // Change to your brand color
-      secondary: "#1D4ED8", // Change to your secondary color
-    }
-  }
+    },
+  },
 };
 
 // Utility functions for accessing store configuration
@@ -298,13 +300,22 @@ export const getSEOConfig = () => storeConfig.seo;
 
 // Currency formatting utility
 export const formatCurrency = (amount: number): string => {
-  const { symbol, position, decimalPlaces, thousandsSeparator, decimalSeparator } = storeConfig.currency;
-  
-  const formattedAmount = amount?.toFixed(decimalPlaces)
+  const {
+    symbol,
+    position,
+    decimalPlaces,
+    thousandsSeparator,
+    decimalSeparator,
+  } = storeConfig.currency;
+
+  const formattedAmount = amount
+    ?.toFixed(decimalPlaces)
     .replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator)
-    .replace('.', decimalSeparator);
-  
-  return position === 'before' ? `${symbol}${formattedAmount}` : `${formattedAmount}${symbol}`;
+    .replace(".", decimalSeparator);
+
+  return position === "before"
+    ? `${symbol}${formattedAmount}`
+    : `${formattedAmount}${symbol}`;
 };
 
 // Theme utility functions
@@ -315,17 +326,23 @@ export const getThemeSpacing = () => storeConfig.theme.spacing;
 export const getThemeShadows = () => storeConfig.theme.shadows;
 
 // Feature flag utilities
-export const isFeatureEnabled = (feature: keyof StoreConfig['features']): boolean => {
+export const isFeatureEnabled = (
+  feature: keyof StoreConfig["features"]
+): boolean => {
   return storeConfig.features[feature];
 };
 
 // Social media utilities
 export const getSocialLinks = () => {
   const social = storeConfig.social;
-  return Object.entries(social).filter(([_, url]) => url).map(([platform, url]) => ({
-    platform,
-    url
-  }));
+  return Object.entries(social)
+    .filter(([_, url]) => url)
+    .map(([platform, url]) => ({
+      platform,
+      url,
+    }));
 };
 
 export default storeConfig;
+
+

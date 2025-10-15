@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { storeConfig } from "@/lib/storeConfig";
 
 export const metadata: Metadata = {
-  title: "NIKE - Just Do It",
-  description: "Shop the latest Nike shoes, clothing, and accessories. Free shipping on orders over $50.",
-  keywords: "Nike, shoes, sneakers, athletic wear, running, basketball, sports",
-  authors: [{ name: "Nike Inc." }],
+  title: storeConfig.seo.defaultTitle,
+  description: storeConfig.seo.defaultDescription,
+  keywords: storeConfig.seo.defaultKeywords.join(", "),
+  authors: [{ name: storeConfig.store.name }],
   openGraph: {
-    title: "NIKE - Just Do It",
-    description: "Shop the latest Nike shoes, clothing, and accessories.",
+    title: storeConfig.seo.defaultTitle,
+    description: storeConfig.seo.defaultDescription,
     type: "website",
+    images: storeConfig.seo.ogImage ? [storeConfig.seo.ogImage] : undefined,
+  },
+  twitter: {
+    card: storeConfig.seo.twitterCard || "summary_large_image",
   },
 };
 

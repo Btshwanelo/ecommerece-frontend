@@ -21,6 +21,7 @@ api.interceptors.request.use(
 
     // Only add auth token for protected endpoints
     const url = config.url || "";
+    const fullUrl = `${config.baseURL}${url}`;
     const isPublicEndpoint =
       url.includes("/products") ||
       url.includes("/categories") ||
@@ -28,7 +29,13 @@ api.interceptors.request.use(
       url.includes("/attributes") ||
       url.includes("/delivery/available");
 
-    console.log("API Request:", { url, isPublicEndpoint, hasToken: !!token });
+    console.log("API Request:", { 
+      url, 
+      fullUrl, 
+      isPublicEndpoint, 
+      hasToken: !!token,
+      baseURL: config.baseURL 
+    });
 
     // Only send cookies/credentials for protected endpoints
     config.withCredentials = !isPublicEndpoint;
@@ -60,26 +67,41 @@ api.interceptors.response.use(
     console.log("API Response Error:", {
       status: error.response?.status,
       url: error.config?.url,
+      fullUrl: `${error.config?.baseURL}${error.config?.url}`,
       message: error.message,
+      data: error.response?.data,
     });
 
     if (error.response?.status === 401) {
       // Handle unauthorized access - only redirect for protected endpoints
       if (typeof window !== "undefined") {
         const url = error.config?.url || "";
-         const isProtectedEndpoint =
-           url.includes("/users") ||
-           url.includes("/orders") ||
-           url.includes("/cart");
+        
+        // Define public endpoints that should never trigger login redirect
+        const isPublicEndpoint =
+          url.includes("/products") ||
+          url.includes("/categories") ||
+          url.includes("/brands") ||
+          url.includes("/attributes") ||
+          url.includes("/delivery/available");
 
-        console.log("401 Error:", { url, isProtectedEndpoint });
+        // Define protected endpoints that should trigger login redirect
+        const isProtectedEndpoint =
+          url.includes("/users") ||
+          url.includes("/orders") ||
+          url.includes("/cart") ||
+          url.includes("/admin");
 
-        if (isProtectedEndpoint) {
+        console.log("401 Error:", { url, isPublicEndpoint, isProtectedEndpoint });
+
+        // Only redirect if it's a protected endpoint AND not a public endpoint
+        if (isProtectedEndpoint && !isPublicEndpoint) {
           console.log("Redirecting to login for protected endpoint");
           localStorage.removeItem("token");
+          localStorage.removeItem("user");
           window.location.href = "/auth/login";
         } else {
-          console.log("Not redirecting for public endpoint");
+          console.log("Not redirecting - public endpoint or not protected");
         }
       }
     }

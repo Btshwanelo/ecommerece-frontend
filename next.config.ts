@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -23,10 +24,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Allow development on any port
-  experimental: {
-    allowedDevOrigins: ['localhost'],
-  },
+  // Set output file tracing root to avoid lockfile warnings
+  outputFileTracingRoot: __dirname,
 };
 
 export default nextConfig;

@@ -4,11 +4,15 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Search, ShoppingBag, User, Menu, X, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useStoreConfig, useCurrency } from '@/hooks/useStoreConfig';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const { storeName, logo, colors, shipping, isFeatureEnabled } = useStoreConfig();
+  const { format } = useCurrency();
 
   const navigation = [
     { name: 'New & Featured', href: '/products?category=new' },
@@ -28,16 +32,22 @@ const Header = () => {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       {/* Top banner */}
-      <div className="bg-black text-white text-center py-2 text-sm">
-        <p>Free shipping on orders over $50</p>
-      </div>
+      {shipping.freeShippingThreshold && (
+        <div className="bg-black text-white text-center py-2 text-sm">
+          <p>Free shipping on orders over {format(shipping.freeShippingThreshold)}</p>
+        </div>
+      )}
 
       {/* Main header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-black">NIKE</h1>
+            <img 
+              src={logo.primary} 
+              alt={`${storeName} logo`}
+              className="h-8 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -64,9 +74,11 @@ const Header = () => {
             </button>
 
             {/* Wishlist */}
-            <Link href="/wishlist" className="p-2 text-gray-700 hover:text-black transition-colors">
-              <Heart className="h-5 w-5" />
-            </Link>
+            {isFeatureEnabled('enableWishlist') && (
+              <Link href="/wishlist" className="p-2 text-gray-700 hover:text-black transition-colors">
+                <Heart className="h-5 w-5" />
+              </Link>
+            )}
 
             {/* Cart */}
             <Link href="/cart" className="p-2 text-gray-700 hover:text-black transition-colors relative">

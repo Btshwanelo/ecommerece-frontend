@@ -1,40 +1,42 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { useStoreConfig } from "@/hooks/useStoreConfig";
 
 const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { storeTagline, colors } = useStoreConfig();
 
   const heroSlides = [
     {
-      title: 'Just Do It',
-      subtitle: 'New Air Max Collection',
-      description: 'Step into the future with our latest Air Max designs.',
-      image: '/images/hero-1.jpg',
-      cta: 'Shop Now',
-      ctaLink: '/products?category=air-max',
-      bgColor: 'bg-gradient-to-r from-blue-600 to-purple-600',
+      title: storeTagline || "Just Do It",
+      subtitle: "New Collection",
+      description: "Discover our latest designs and premium quality products.",
+      image: "/AIR+FORCE+1+LUXE.avif",
+      cta: "Shop Now",
+      ctaLink: "/AIR+FORCE+1+LUXE.avif",
+      bgColor: "bg-gradient-to-r from-blue-600 to-purple-600",
     },
     {
-      title: 'Run Your Way',
-      subtitle: 'Performance Running',
-      description: 'Engineered for speed, designed for comfort.',
-      image: '/images/hero-2.jpg',
-      cta: 'Explore',
-      ctaLink: '/products?category=running',
-      bgColor: 'bg-gradient-to-r from-red-500 to-orange-500',
+      title: "Quality First",
+      subtitle: "Premium Products",
+      description: "Engineered for excellence, designed for your lifestyle.",
+      image: "/banner.webp",
+      cta: "Explore",
+      ctaLink: "/AIR+FORCE+1+LUXE.avif",
+      bgColor: "bg-gradient-to-r from-red-500 to-orange-500",
     },
     {
-      title: 'Street Style',
-      subtitle: 'Urban Collection',
-      description: 'Where fashion meets function in the city.',
-      image: '/images/hero-3.jpg',
-      cta: 'Discover',
-      ctaLink: '/products?category=urban',
-      bgColor: 'bg-gradient-to-r from-gray-800 to-gray-900',
+      title: "Style & Comfort",
+      subtitle: "Urban Collection",
+      description: "Where fashion meets function in everyday life.",
+      image: "/AIR+FORCE+1+LUXE.avif",
+      cta: "Discover",
+      ctaLink: "/AIR+FORCE+1+LUXE.avif",
+      bgColor: "bg-gradient-to-r from-gray-800 to-gray-900",
     },
   ];
 
@@ -57,9 +59,9 @@ const HeroSection = () => {
           animate={{ opacity: currentSlide === index ? 1 : 0 }}
           style={{
             backgroundImage: `url(${slide.image})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundBlendMode: 'overlay',
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundBlendMode: "overlay",
           }}
         />
       ))}
@@ -84,7 +86,7 @@ const HeroSection = () => {
               >
                 {heroSlides[currentSlide].title}
               </motion.h1>
-              
+
               <motion.h2
                 key={`subtitle-${currentSlide}`}
                 initial={{ opacity: 0, y: 20 }}
@@ -94,7 +96,7 @@ const HeroSection = () => {
               >
                 {heroSlides[currentSlide].subtitle}
               </motion.h2>
-              
+
               <motion.p
                 key={`desc-${currentSlide}`}
                 initial={{ opacity: 0, y: 20 }}
@@ -104,7 +106,7 @@ const HeroSection = () => {
               >
                 {heroSlides[currentSlide].description}
               </motion.p>
-              
+
               <motion.div
                 key={`cta-${currentSlide}`}
                 initial={{ opacity: 0, y: 20 }}
@@ -122,7 +124,7 @@ const HeroSection = () => {
             </motion.div>
 
             {/* Image placeholder */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -131,7 +133,7 @@ const HeroSection = () => {
               <div className="w-full h-96 bg-white/10 rounded-lg backdrop-blur-sm flex items-center justify-center">
                 <p className="text-white text-lg">Product Image</p>
               </div>
-            </motion.div>
+            </motion.div> */}
           </div>
         </div>
       </div>
@@ -144,8 +146,8 @@ const HeroSection = () => {
             onClick={() => setCurrentSlide(index)}
             className={`w-3 h-3 rounded-full transition-all duration-300 ${
               currentSlide === index
-                ? 'bg-white scale-125'
-                : 'bg-white/50 hover:bg-white/75'
+                ? "bg-white scale-125"
+                : "bg-white/50 hover:bg-white/75"
             }`}
           />
         ))}
@@ -155,4 +157,3 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
-

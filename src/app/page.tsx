@@ -8,8 +8,12 @@ import { Product } from "@/types";
 import productService from "@/services/productService";
 import { useApi } from "@/hooks/useApi";
 import { ProductResponse } from "@/services/productService";
+import { useStoreConfig, useFeatures } from "@/hooks/useStoreConfig";
 
 export default function Home() {
+  const { storeDescription } = useStoreConfig();
+  const { enableNewsletter } = useFeatures();
+console.log('Render Home Page');
   // Fetch featured products
   const {
     data: featuredProductsData,
@@ -44,8 +48,8 @@ export default function Home() {
               Featured Products
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Discover our latest collection of premium athletic footwear and
-              apparel
+              {storeDescription ||
+                "Discover our latest collection of premium products"}
             </p>
           </div>
 
@@ -160,27 +164,30 @@ export default function Home() {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-16 bg-black text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Stay in the Loop</h2>
-          <p className="text-gray-300 mb-8">
-            Get the latest updates on new releases, exclusive offers, and more.
-          </p>
-          <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-3 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-white"
-            />
-            <button
-              type="submit"
-              className="px-6 py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              Subscribe
-            </button>
-          </form>
-        </div>
-      </section>
+      {enableNewsletter && (
+        <section className="py-16 bg-black text-white">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold mb-4">Stay in the Loop</h2>
+            <p className="text-gray-300 mb-8">
+              Get the latest updates on new releases, exclusive offers, and
+              more.
+            </p>
+            <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="flex-1 px-4 py-3 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-white"
+              />
+              <button
+                type="submit"
+                className="px-6 py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Subscribe
+              </button>
+            </form>
+          </div>
+        </section>
+      )}
     </Layout>
   );
 }

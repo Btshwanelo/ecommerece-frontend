@@ -22,7 +22,7 @@ A modern, responsive ecommerce frontend built with Next.js 15, TypeScript, Tailw
 - **Icons**: Lucide React
 - **Forms**: React Hook Form
 - **HTTP Client**: Axios
-- **Authentication**: NextAuth.js (ready for integration)
+- **Authentication**: Custom JWT-based authentication
 
 ## 📦 Installation
 
@@ -44,10 +44,7 @@ A modern, responsive ecommerce frontend built with Next.js 15, TypeScript, Tailw
    
    Update the `.env.local` file with your configuration:
    ```env
-   NEXT_PUBLIC_API_BASE_URL=http://localhost:3043/api/v1
-   NEXT_PUBLIC_API_URL=http://localhost:3043
-   NEXTAUTH_URL=http://localhost:3000
-   NEXTAUTH_SECRET=your-secret-key-here
+   NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v2
    NODE_ENV=development
    ```
 

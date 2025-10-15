@@ -13,6 +13,7 @@ import {
   OrderService,
   UserService,
 } from "@/services/v2";
+import { useCurrency } from "@/hooks/useStoreConfig";
 
 interface AddressForm {
   fullName: string;
@@ -30,6 +31,7 @@ export default function CheckoutPage() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { format } = useCurrency();
 
   const [address, setAddress] = useState<AddressForm>({
     fullName: "",
@@ -77,11 +79,9 @@ export default function CheckoutPage() {
     [cart]
   );
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(price);
+  const formatPrice = (price: number) => {
+    return format(price);
+  };
 
   // Save new address to user's account
   const saveAddressToAccount = async (
@@ -292,7 +292,8 @@ export default function CheckoutPage() {
     if (!userContact.email || !userContact.firstName || !userContact.lastName) {
       setOrderMessage({
         type: "error",
-        message: "Please fill in all required contact details (email, first name, last name)",
+        message:
+          "Please fill in all required contact details (email, first name, last name)",
       });
       return;
     }
@@ -342,16 +343,21 @@ export default function CheckoutPage() {
 
     setPlacingOrder(true);
     setOrderMessage(null);
-    
+
     try {
       // Generate a temporary order ID for the payment flow
-      const tempOrderId = `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
+      const tempOrderId = `TEMP-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+
       // Store all checkout data for payment step (no API call yet)
       const checkoutData = {
         tempOrderId,
         cart: cart,
-        deliveryOptionId: selectedDeliveryId === "default-delivery" ? undefined : selectedDeliveryId,
+        deliveryOptionId:
+          selectedDeliveryId === "default-delivery"
+            ? undefined
+            : selectedDeliveryId,
         userContact: userContact,
         shippingAddress: shippingAddress,
         useExistingAddress: useExistingAddress,
@@ -362,7 +368,7 @@ export default function CheckoutPage() {
       };
 
       // Store checkout data in sessionStorage for payment step
-      sessionStorage.setItem('checkoutData', JSON.stringify(checkoutData));
+      sessionStorage.setItem("checkoutData", JSON.stringify(checkoutData));
 
       setOrderMessage({
         type: "success",
@@ -457,7 +463,10 @@ export default function CheckoutPage() {
                       type="text"
                       value={userContact.firstName}
                       onChange={(e) =>
-                        setUserContact({ ...userContact, firstName: e.target.value })
+                        setUserContact({
+                          ...userContact,
+                          firstName: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                       required
@@ -471,7 +480,10 @@ export default function CheckoutPage() {
                       type="text"
                       value={userContact.lastName}
                       onChange={(e) =>
-                        setUserContact({ ...userContact, lastName: e.target.value })
+                        setUserContact({
+                          ...userContact,
+                          lastName: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                       required
@@ -485,7 +497,10 @@ export default function CheckoutPage() {
                       type="email"
                       value={userContact.email}
                       onChange={(e) =>
-                        setUserContact({ ...userContact, email: e.target.value })
+                        setUserContact({
+                          ...userContact,
+                          email: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                       required
@@ -499,7 +514,10 @@ export default function CheckoutPage() {
                       type="tel"
                       value={userContact.phone}
                       onChange={(e) =>
-                        setUserContact({ ...userContact, phone: e.target.value })
+                        setUserContact({
+                          ...userContact,
+                          phone: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                       placeholder="+27 82 123 4567"
@@ -769,7 +787,6 @@ export default function CheckoutPage() {
                   ))}
                 </div>
               </div>
-
             </div>
 
             {/* Right: Order Summary */}

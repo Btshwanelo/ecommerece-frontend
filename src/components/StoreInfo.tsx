@@ -104,3 +104,5 @@ const StoreInfo: React.FC = () => {
 };
 
 export default StoreInfo;
+
+

@@ -7,6 +7,7 @@ import { Heart, ShoppingBag, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Product } from '@/types';
 import { CartService } from '@/services/v2';
+import { useCurrency, useFeatures } from '@/hooks/useStoreConfig';
 
 interface ProductCardProps {
   product: Product;
@@ -18,6 +19,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [cartMessage, setCartMessage] = useState<string | null>(null);
+  
+  const { format } = useCurrency();
+  const { enableWishlist } = useFeatures();
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -67,10 +71,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
+    return format(price);
   };
 
   // Handle both v1 and v2 API structures
@@ -168,16 +169,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
           {/* Quick actions */}
           <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <button
-              onClick={handleWishlist}
-              className={`p-2 rounded-full shadow-lg transition-colors ${
-                isWishlisted
-                  ? 'bg-red-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Heart className="h-4 w-4" fill={isWishlisted ? 'currentColor' : 'none'} />
-            </button>
+            {enableWishlist && (
+              <button
+                onClick={handleWishlist}
+                className={`p-2 rounded-full shadow-lg transition-colors ${
+                  isWishlisted
+                    ? 'bg-red-500 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Heart className="h-4 w-4" fill={isWishlisted ? 'currentColor' : 'none'} />
+              </button>
+            )}
             <button className="p-2 rounded-full bg-white text-gray-700 shadow-lg hover:bg-gray-100 transition-colors">
               <Eye className="h-4 w-4" />
             </button>

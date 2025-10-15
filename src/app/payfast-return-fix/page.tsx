@@ -87,3 +87,5 @@ export default function PayfastReturnFixPage() {
     </div>
   );
 }
+
+

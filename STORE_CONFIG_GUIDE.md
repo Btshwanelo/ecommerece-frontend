@@ -291,3 +291,5 @@ If you encounter issues:
 1. Check the TypeScript types for the expected structure
 2. Verify your configuration matches the `StoreConfig` interface
 3. Test with the example component to ensure everything is working
+
+

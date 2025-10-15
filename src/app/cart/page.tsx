@@ -7,6 +7,7 @@ import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Cart, CartItem } from '@/types';
 import { CartService } from '@/services/v2';
+import useStoreConfig from '@/hooks/useStoreConfig';
 
 export default function CartPage() {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -16,6 +17,9 @@ export default function CartPage() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [cartLoading, setCartLoading] = useState(true);
   const [cartError, setCartError] = useState<string | null>(null);
+
+    const { storeName, storeTagline, socialLinks, storeWebsite } = useStoreConfig();
+  
 
   // Fetch cart data from v2 API
   const fetchCart = async () => {
@@ -166,13 +170,13 @@ export default function CartPage() {
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto text-center">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-black mb-2">NIKE</h1>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Error Loading Cart</h2>
-            <p className="text-gray-600 mb-8">
-              {cartError}
-            </p>
+            <h1 className="text-4xl font-bold text-black mb-2">{storeName}</h1>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              Error Loading Cart
+            </h2>
+            <p className="text-gray-600 mb-8">{cartError}</p>
           </div>
-          
+
           <button
             onClick={() => fetchCart()}
             className="inline-flex items-center px-8 py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
@@ -189,13 +193,15 @@ export default function CartPage() {
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto text-center">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-black mb-2">NIKE</h1>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your cart is empty</h2>
+            <h1 className="text-4xl font-bold text-black mb-2">{storeName}</h1>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              Your cart is empty
+            </h2>
             <p className="text-gray-600 mb-8">
               Looks like you haven't added any items to your cart yet.
             </p>
           </div>
-          
+
           <Link
             href="/products"
             className="inline-flex items-center px-8 py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
