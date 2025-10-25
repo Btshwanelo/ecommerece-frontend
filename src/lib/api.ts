@@ -22,12 +22,21 @@ api.interceptors.request.use(
     // Only add auth token for protected endpoints
     const url = config.url || "";
     const fullUrl = `${config.baseURL}${url}`;
-    const isPublicEndpoint =
-      url.includes("/products") ||
-      url.includes("/categories") ||
-      url.includes("/brands") ||
-      url.includes("/attributes") ||
-      url.includes("/delivery/available");
+    const method = config.method?.toLowerCase() || 'get';
+    
+    // Define public endpoints (read-only operations)
+    const isPublicReadEndpoint =
+      (method === 'get' && (
+        url.includes("/products") ||
+        url.includes("/categories") ||
+        url.includes("/brands") ||
+        url.includes("/attributes") ||
+        url.includes("/delivery/available")
+      ));
+    
+    // All write operations (POST, PUT, DELETE) require authentication
+    const isWriteOperation = method === 'post' || method === 'put' || method === 'delete';
+    const isPublicEndpoint = isPublicReadEndpoint && !isWriteOperation;
 
     console.log("API Request:", { 
       url, 
@@ -78,12 +87,17 @@ api.interceptors.response.use(
         const url = error.config?.url || "";
         
         // Define public endpoints that should never trigger login redirect
-        const isPublicEndpoint =
-          url.includes("/products") ||
-          url.includes("/categories") ||
-          url.includes("/brands") ||
-          url.includes("/attributes") ||
-          url.includes("/delivery/available");
+        const method = error.config?.method?.toLowerCase() || 'get';
+        const isPublicReadEndpoint =
+          (method === 'get' && (
+            url.includes("/products") ||
+            url.includes("/categories") ||
+            url.includes("/brands") ||
+            url.includes("/attributes") ||
+            url.includes("/delivery/available")
+          ));
+        const isWriteOperation = method === 'post' || method === 'put' || method === 'delete';
+        const isPublicEndpoint = isPublicReadEndpoint && !isWriteOperation;
 
         // Define protected endpoints that should trigger login redirect
         const isProtectedEndpoint =

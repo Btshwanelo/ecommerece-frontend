@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Cart, CartItem } from '@/types';
-import { CartService } from '@/services/v2';
+import { CartService, UserService } from '@/services/v2';
 import useStoreConfig from '@/hooks/useStoreConfig';
+import AuthDrawer from '@/components/auth/AuthDrawer';
 
 export default function CartPage() {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -18,7 +19,11 @@ export default function CartPage() {
   const [cartLoading, setCartLoading] = useState(true);
   const [cartError, setCartError] = useState<string | null>(null);
 
-    const { storeName, storeTagline, socialLinks, storeWebsite } = useStoreConfig();
+  // Authentication state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showAuthDrawer, setShowAuthDrawer] = useState(false);
+
+  const { storeName, storeTagline, socialLinks, storeWebsite } = useStoreConfig();
   
 
   // Fetch cart data from v2 API
@@ -45,9 +50,23 @@ export default function CartPage() {
     }
   };
 
+  // Check authentication status
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
   useEffect(() => {
     fetchCart();
   }, []);
+
+  // Handle successful authentication
+  const handleAuthSuccess = async (user: any, token: string) => {
+    console.log("Authentication successful:", user);
+    setIsLoggedIn(true);
+    // Optionally refresh cart data after authentication
+    fetchCart();
+  };
 
   const cartItems = cart?.items || [];
 
@@ -225,6 +244,39 @@ export default function CartPage() {
           </p>
         </div>
 
+        {/* Login Prompt for Guest Users */}
+        {!isLoggedIn && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <User className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                  Sign in for a better experience
+                </h3>
+                <p className="text-blue-700 mb-4">
+                  Create an account or sign in to save your cart, track orders, and access your saved addresses during checkout.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAuthDrawer(true)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Sign In / Create Account
+                  </button>
+                  <button
+                    onClick={() => setShowAuthDrawer(false)}
+                    className="text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors"
+                  >
+                    Continue as Guest
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
@@ -393,6 +445,13 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+
+      {/* Authentication Drawer */}
+      <AuthDrawer
+        isOpen={showAuthDrawer}
+        onClose={() => setShowAuthDrawer(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }

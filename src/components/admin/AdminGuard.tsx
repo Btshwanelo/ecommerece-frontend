@@ -34,7 +34,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
       }
 
       // Verify token and get user info
-      const response = await fetch("http://localhost:8080/api/v1/auth/me", {
+      const response = await fetch("http://localhost:8080/api/v2/users/profile", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -42,7 +42,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
       if (response.ok) {
         const data = await response.json();
-        const userData = data.data;
+        const userData = data.user || data.data;
         
         // Check if user is admin
         if (userData.role !== "admin") {

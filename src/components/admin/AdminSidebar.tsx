@@ -21,11 +21,11 @@ const navigation = [
   { name: "Orders", href: "/admin/orders", icon: ClipboardDocumentListIcon },
   { name: "Customers", href: "/admin/customers", icon: UsersIcon },
   { name: "Categories", href: "/admin/categories", icon: TagIcon },
-  { name: "Subcategories", href: "/admin/subcategories", icon: Squares2X2Icon },
+  // { name: "Subcategories", href: "/admin/subcategories", icon: Squares2X2Icon },
   { name: "Brands", href: "/admin/brands", icon: BuildingStorefrontIcon },
   { name: "Attributes", href: "/admin/attributes", icon: SwatchIcon },
-  { name: "Analytics", href: "/admin/analytics", icon: ChartBarIcon },
-  { name: "Settings", href: "/admin/settings", icon: CogIcon },
+  // { name: "Analytics", href: "/admin/analytics", icon: ChartBarIcon },
+  // { name: "Settings", href: "/admin/settings", icon: CogIcon },
 ];
 
 export default function AdminSidebar() {

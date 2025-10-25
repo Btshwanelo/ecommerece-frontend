@@ -239,8 +239,14 @@ export default function EditProductPage() {
               } else if ((variantsResponse as any).variant && typeof (variantsResponse as any).variant === 'object') {
                 variantsData = [(variantsResponse as any).variant];
               }
-              setVariants(variantsData);
-              console.log("Processed variants data:", variantsData);
+              // Process variants to separate existing images from new images
+              const processedVariants = variantsData.map((variant: any) => ({
+                ...variant,
+                existingImages: variant.images || [],
+                newImages: []
+              }));
+              setVariants(processedVariants);
+              console.log("Processed variants data:", processedVariants);
             } else {
               console.log("No variants found or error:", variantsResponse.error);
               setVariants([]);
@@ -306,7 +312,8 @@ export default function EditProductPage() {
         stockQuantity: parseInt(formData.inventory.stockQuantity) || 0,
         stockStatus: formData.inventory.stockStatus
       },
-      images: [],
+      existingImages: [],
+      newImages: [],
       isActive: true
     };
     setVariants([...variants, newVariant]);
@@ -331,6 +338,28 @@ export default function EditProductPage() {
   const updateVariantInventory = (index: number, field: string, value: any) => {
     const updatedVariants = [...variants];
     updatedVariants[index].inventory = { ...updatedVariants[index].inventory, [field]: value };
+    setVariants(updatedVariants);
+  };
+
+  const handleVariantImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const updatedVariants = [...variants];
+      // For existing variants, we need to handle both existing images and new files
+      const newFiles = Array.from(e.target.files);
+      updatedVariants[index].newImages = newFiles;
+      setVariants(updatedVariants);
+    }
+  };
+
+  const removeVariantImage = (variantIndex: number, imageIndex: number, isExisting: boolean = false) => {
+    const updatedVariants = [...variants];
+    if (isExisting) {
+      // Remove from existing images
+      updatedVariants[variantIndex].existingImages = updatedVariants[variantIndex].existingImages.filter((_: any, i: number) => i !== imageIndex);
+    } else {
+      // Remove from new images
+      updatedVariants[variantIndex].newImages = updatedVariants[variantIndex].newImages.filter((_: File, i: number) => i !== imageIndex);
+    }
     setVariants(updatedVariants);
   };
 
@@ -550,9 +579,9 @@ export default function EditProductPage() {
                 variantFormData.append('inventory[stockStatus]', variant.inventory.stockStatus || 'in_stock');
               }
               
-              // Add variant images if any
-              if (variant.images && variant.images.length > 0) {
-                variant.images.forEach((image: File) => {
+              // Add new variant images if any
+              if (variant.newImages && variant.newImages.length > 0) {
+                variant.newImages.forEach((image: File) => {
                   variantFormData.append('images', image);
                 });
               }
@@ -1132,7 +1161,7 @@ export default function EditProductPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Price</label>
                         <input
@@ -1154,6 +1183,70 @@ export default function EditProductPage() {
                           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                           placeholder="0"
                         />
+                      </div>
+                    </div>
+
+                    {/* Variant Images */}
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Variant Images
+                      </label>
+                      
+                      {/* Existing Images */}
+                      {variant.existingImages && variant.existingImages.length > 0 && (
+                        <div className="mb-4">
+                          <h5 className="text-sm font-medium text-gray-600 mb-2">Existing Images:</h5>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {variant.existingImages.map((image: any, imageIndex: number) => (
+                              <div key={`existing-${imageIndex}`} className="relative">
+                                <img
+                                  src={image.url}
+                                  alt={image.alt || `Variant ${index + 1} Image ${imageIndex + 1}`}
+                                  className="w-full h-24 object-cover rounded-lg border border-gray-300"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeVariantImage(index, imageIndex, true)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                >
+                                  <XMarkIcon className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* New Images Upload */}
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-600 mb-2">Add New Images:</h5>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => handleVariantImageChange(index, e)}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                        {variant.newImages && variant.newImages.length > 0 && (
+                          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {variant.newImages.map((image: File, imageIndex: number) => (
+                              <div key={`new-${imageIndex}`} className="relative">
+                                <img
+                                  src={URL.createObjectURL(image)}
+                                  alt={`Variant ${index + 1} New Image ${imageIndex + 1}`}
+                                  className="w-full h-24 object-cover rounded-lg border border-gray-300"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeVariantImage(index, imageIndex, false)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                >
+                                  <XMarkIcon className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

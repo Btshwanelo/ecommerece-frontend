@@ -83,6 +83,7 @@ export default function CheckoutPage() {
     return format(price);
   };
 
+
   // Save new address to user's account
   const saveAddressToAccount = async (
     addressData: AddressForm
@@ -114,7 +115,7 @@ export default function CheckoutPage() {
       const lastName = nameParts.slice(1).join(" ") || "User"; // Default to 'User' if no last name
 
       const addressPayload = {
-        type: "shipping",
+        type: "shipping" as const,
         firstName: firstName,
         lastName: lastName,
         addressLine1: addressData.street, // Use addressLine1 as required by API
@@ -133,8 +134,8 @@ export default function CheckoutPage() {
       const response = await UserService.createAddress(addressPayload);
       console.log("Address creation response:", response);
 
-      if (response.success && response.address) {
-        return response.address._id;
+      if (response.success && response.data) {
+        return response.data._id;
       }
       return null;
     } catch (error) {
@@ -363,8 +364,14 @@ export default function CheckoutPage() {
         useExistingAddress: useExistingAddress,
         selectedAddressId: selectedAddressId,
         isLoggedIn: isLoggedIn,
-        amount: cart?.totals?.total || 0,
-        totals: cart?.totals,
+        amount: cart?.total || 0,
+        totals: {
+          subtotal: cart?.subtotal || 0,
+          shipping: cart?.shipping || 0,
+          tax: cart?.tax || 0,
+          discount: cart?.discount || 0,
+          total: cart?.total || 0,
+        },
       };
 
       // Store checkout data in sessionStorage for payment step

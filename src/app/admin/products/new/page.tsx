@@ -209,6 +209,20 @@ export default function NewProductPage() {
     setVariants(updatedVariants);
   };
 
+  const handleVariantImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const updatedVariants = [...variants];
+      updatedVariants[index].images = Array.from(e.target.files);
+      setVariants(updatedVariants);
+    }
+  };
+
+  const removeVariantImage = (variantIndex: number, imageIndex: number) => {
+    const updatedVariants = [...variants];
+    updatedVariants[variantIndex].images = updatedVariants[variantIndex].images.filter((_: File, i: number) => i !== imageIndex);
+    setVariants(updatedVariants);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -1004,7 +1018,7 @@ export default function NewProductPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Price</label>
                         <input
@@ -1027,6 +1041,40 @@ export default function NewProductPage() {
                           placeholder="0"
                         />
                       </div>
+                    </div>
+
+                    {/* Variant Images */}
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Variant Images
+                      </label>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => handleVariantImageChange(index, e)}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      {variant.images && variant.images.length > 0 && (
+                        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {variant.images.map((image: File, imageIndex: number) => (
+                            <div key={imageIndex} className="relative">
+                              <img
+                                src={URL.createObjectURL(image)}
+                                alt={`Variant ${index + 1} Preview ${imageIndex + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border border-gray-300"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeVariantImage(index, imageIndex)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              >
+                                <XMarkIcon className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
