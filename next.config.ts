@@ -1,30 +1,44 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  output: "standalone",
   images: {
     remotePatterns: [
+      // Object storage (file server)
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '4000',
-        pathname: '/file/**',
+        protocol: "http",
+        hostname:
+          process.env.NEXT_PUBLIC_OBJECT_STORAGE_HOSTNAME || "109.199.122.35",
+        port: process.env.NEXT_PUBLIC_OBJECT_STORAGE_PORT || "4000",
+        pathname: "/file/**",
       },
+      // Backend API (for images or CMS uploads)
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '8080',
-        pathname: '/**',
+        protocol: "http",
+        hostname: process.env.NEXT_PUBLIC_API_HOSTNAME || "109.199.122.35",
+        port: process.env.NEXT_PUBLIC_API_PORT || "5000",
+        pathname: "/**",
       },
-      // Add more patterns for production if needed
+      // Allow https for production CDN or external images
       {
-        protocol: 'https',
-        hostname: '**',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "**",
+        pathname: "/**",
       },
     ],
   },
-  // Set output file tracing root to avoid lockfile warnings
+
+  env: {
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_PAYFAST_MERCHANT_ID:
+      process.env.NEXT_PUBLIC_PAYFAST_MERCHANT_ID,
+    NEXT_PUBLIC_PAYFAST_MERCHANT_KEY:
+      process.env.NEXT_PUBLIC_PAYFAST_MERCHANT_KEY,
+    NEXT_PUBLIC_PAYFAST_PASSPHRASE: process.env.NEXT_PUBLIC_PAYFAST_PASSPHRASE,
+    NEXT_PUBLIC_PAYFAST_SANDBOX: process.env.NEXT_PUBLIC_PAYFAST_SANDBOX,
+  },
+
+  // Fix Next.js file tracing lockfile warnings
   outputFileTracingRoot: __dirname,
 };
 
