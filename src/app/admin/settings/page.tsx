@@ -28,7 +28,7 @@ export default function SettingsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch(`${(process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v2').replace('/api/v2', '/api/v1')}/auth/me`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v2', '/api/v1')}/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -56,7 +56,7 @@ export default function SettingsPage() {
     
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${(process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v2').replace('/api/v2', '/api/v1')}/auth/profile`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v2', '/api/v1')}/auth/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

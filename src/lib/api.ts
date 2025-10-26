@@ -1,7 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v2";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // Create axios instance with default config
 export const api = axios.create({
@@ -22,28 +21,28 @@ api.interceptors.request.use(
     // Only add auth token for protected endpoints
     const url = config.url || "";
     const fullUrl = `${config.baseURL}${url}`;
-    const method = config.method?.toLowerCase() || 'get';
-    
+    const method = config.method?.toLowerCase() || "get";
+
     // Define public endpoints (read-only operations)
     const isPublicReadEndpoint =
-      (method === 'get' && (
-        url.includes("/products") ||
+      method === "get" &&
+      (url.includes("/products") ||
         url.includes("/categories") ||
         url.includes("/brands") ||
         url.includes("/attributes") ||
-        url.includes("/delivery/available")
-      ));
-    
+        url.includes("/delivery/available"));
+
     // All write operations (POST, PUT, DELETE) require authentication
-    const isWriteOperation = method === 'post' || method === 'put' || method === 'delete';
+    const isWriteOperation =
+      method === "post" || method === "put" || method === "delete";
     const isPublicEndpoint = isPublicReadEndpoint && !isWriteOperation;
 
-    console.log("API Request:", { 
-      url, 
-      fullUrl, 
-      isPublicEndpoint, 
+    console.log("API Request:", {
+      url,
+      fullUrl,
+      isPublicEndpoint,
       hasToken: !!token,
-      baseURL: config.baseURL 
+      baseURL: config.baseURL,
     });
 
     // Only send cookies/credentials for protected endpoints
@@ -85,18 +84,18 @@ api.interceptors.response.use(
       // Handle unauthorized access - only redirect for protected endpoints
       if (typeof window !== "undefined") {
         const url = error.config?.url || "";
-        
+
         // Define public endpoints that should never trigger login redirect
-        const method = error.config?.method?.toLowerCase() || 'get';
+        const method = error.config?.method?.toLowerCase() || "get";
         const isPublicReadEndpoint =
-          (method === 'get' && (
-            url.includes("/products") ||
+          method === "get" &&
+          (url.includes("/products") ||
             url.includes("/categories") ||
             url.includes("/brands") ||
             url.includes("/attributes") ||
-            url.includes("/delivery/available")
-          ));
-        const isWriteOperation = method === 'post' || method === 'put' || method === 'delete';
+            url.includes("/delivery/available"));
+        const isWriteOperation =
+          method === "post" || method === "put" || method === "delete";
         const isPublicEndpoint = isPublicReadEndpoint && !isWriteOperation;
 
         // Define protected endpoints that should trigger login redirect
@@ -106,7 +105,11 @@ api.interceptors.response.use(
           url.includes("/cart") ||
           url.includes("/admin");
 
-        console.log("401 Error:", { url, isPublicEndpoint, isProtectedEndpoint });
+        console.log("401 Error:", {
+          url,
+          isPublicEndpoint,
+          isProtectedEndpoint,
+        });
 
         // Only redirect if it's a protected endpoint AND not a public endpoint
         if (isProtectedEndpoint && !isPublicEndpoint) {

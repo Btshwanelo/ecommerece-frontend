@@ -14,7 +14,7 @@ NEXT_PUBLIC_PAYFAST_PASSPHRASE=your_passphrase_here
 NEXT_PUBLIC_PAYFAST_SANDBOX=true
 
 # API Configuration
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v2
+NEXT_PUBLIC_API_BASE_URL=http://your-api-server.com/api/v2
 ```
 
 ## 2. Getting Payfast Sandbox Credentials

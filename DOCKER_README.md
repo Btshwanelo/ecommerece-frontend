@@ -30,7 +30,7 @@ This document explains how to run the Next.js e-commerce frontend application us
    NEXT_PUBLIC_PAYFAST_PASSPHRASE=your_actual_passphrase
    
    # API endpoint (adjust for your backend)
-   NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v2
+   NEXT_PUBLIC_API_BASE_URL=http://your-api-server.com/api/v2
    
    # Authentication (if using NextAuth)
    NEXTAUTH_SECRET=your_secret_key_here
