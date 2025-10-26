@@ -30,7 +30,8 @@ api.interceptors.request.use(
         url.includes("/categories") ||
         url.includes("/brands") ||
         url.includes("/attributes") ||
-        url.includes("/delivery/available"));
+        url.includes("/delivery/available") ||
+        url.includes("/cart"));
 
     // All write operations (POST, PUT, DELETE) require authentication
     const isWriteOperation =
@@ -72,28 +73,35 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status = error.response?.status;
+    const url = error.config?.url || "";
+    const fullUrl = `${error.config?.baseURL}${url}`;
+    const method = error.config?.method?.toLowerCase() || "get";
+
+    // Enhanced error logging with better context
     console.log("API Response Error:", {
-      status: error.response?.status,
-      url: error.config?.url,
-      fullUrl: `${error.config?.baseURL}${error.config?.url}`,
+      status,
+      url,
+      fullUrl,
+      method,
       message: error.message,
       data: error.response?.data,
+      timestamp: new Date().toISOString(),
     });
 
-    if (error.response?.status === 401) {
+    // Handle different error types
+    if (status === 401) {
       // Handle unauthorized access - only redirect for protected endpoints
       if (typeof window !== "undefined") {
-        const url = error.config?.url || "";
-
         // Define public endpoints that should never trigger login redirect
-        const method = error.config?.method?.toLowerCase() || "get";
         const isPublicReadEndpoint =
           method === "get" &&
           (url.includes("/products") ||
             url.includes("/categories") ||
             url.includes("/brands") ||
             url.includes("/attributes") ||
-            url.includes("/delivery/available"));
+            url.includes("/delivery/available") ||
+            url.includes("/cart"));
         const isWriteOperation =
           method === "post" || method === "put" || method === "delete";
         const isPublicEndpoint = isPublicReadEndpoint && !isWriteOperation;
@@ -121,8 +129,62 @@ api.interceptors.response.use(
           console.log("Not redirecting - public endpoint or not protected");
         }
       }
+    } else if (status === 404) {
+      // Handle 404 errors gracefully - don't break the app
+      console.warn("Resource not found (404):", {
+        url,
+        fullUrl,
+        method,
+        error: error.response?.data?.error || "Resource not found",
+      });
+      
+      // For 404s, return a structured response instead of throwing
+      // This prevents Next.js from treating it as an unhandled error
+      const mockResponse = {
+        data: {
+          success: false,
+          error: error.response?.data?.error || "Resource not found",
+          data: null,
+        },
+        status: 404,
+        statusText: "Not Found",
+        headers: error.response?.headers || {},
+        config: error.config,
+      };
+      
+      return Promise.resolve(mockResponse);
+    } else if (status >= 500) {
+      // Handle server errors
+      console.error("Server error:", {
+        status,
+        url,
+        fullUrl,
+        error: error.response?.data?.error || "Internal server error",
+      });
+    } else if (status >= 400) {
+      // Handle other client errors
+      console.warn("Client error:", {
+        status,
+        url,
+        fullUrl,
+        error: error.response?.data?.error || "Bad request",
+      });
     }
-    return Promise.reject(error);
+
+    // Always reject the promise, but with enhanced error information
+    const enhancedError = {
+      ...error,
+      status,
+      url,
+      fullUrl,
+      method,
+      isNotFound: status === 404,
+      isUnauthorized: status === 401,
+      isServerError: status >= 500,
+      isClientError: status >= 400 && status < 500,
+    };
+
+    return Promise.reject(enhancedError);
   }
 );
 

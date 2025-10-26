@@ -7,6 +7,7 @@ import {
   V2ApiResponse,
   V2PaginatedResponse 
 } from '@/types';
+import ErrorHandler from '@/utils/errorHandler';
 
 export class ProductService {
   // Get products with advanced filtering
@@ -35,26 +36,55 @@ export class ProductService {
 
   // Get products by category slug
   static async getProductsByCategorySlug(categorySlug: string, filters: ProductFilters = {}): Promise<V2ProductResponse> {
-    const params = new URLSearchParams();
-    
-    // Add all filter parameters
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        if (Array.isArray(value)) {
-          value.forEach(v => params.append(`${key}[]`, v.toString()));
-        } else {
-          params.append(key, value.toString());
+    try {
+      const params = new URLSearchParams();
+      
+      // Add all filter parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            value.forEach(v => params.append(`${key}[]`, v.toString()));
+          } else {
+            params.append(key, value.toString());
+          }
         }
-      }
-    });
+      });
 
-    const url = `/products/category/slug/${categorySlug}?${params.toString()}`;
-    console.log("Calling products by category slug API:", url);
-    console.log("Filters:", filters);
-    const response = await api.get(url);
-    console.log("Raw API response:", response);
-    console.log("Response data:", response.data);
-    return response.data;
+      const url = `/products/category/slug/${categorySlug}?${params.toString()}`;
+      console.log("Calling products by category slug API:", url);
+      console.log("Filters:", filters);
+      const response = await api.get(url);
+      console.log("Raw API response:", response);
+      console.log("Response data:", response.data);
+      
+      // Check if the response indicates a 404 (handled by interceptor)
+      if (response.status === 404 || !response.data.success) {
+        return {
+          success: false,
+          error: response.data.error || 'Category not found',
+          products: [],
+          total: 0,
+          pages: 1,
+        } as V2ProductResponse;
+      }
+      
+      return response.data;
+    } catch (error) {
+      ErrorHandler.logError(error, 'ProductService.getProductsByCategorySlug');
+      
+      // This should rarely happen now since 404s are handled by the interceptor
+      if (ErrorHandler.isNotFound(error)) {
+        return {
+          success: false,
+          error: 'Category not found',
+          products: [],
+          total: 0,
+          pages: 1,
+        } as V2ProductResponse;
+      }
+      
+      throw ErrorHandler.handleApiError(error);
+    }
   }
 
   // Search products
@@ -84,8 +114,33 @@ export class ProductService {
 
   // Get product by slug
   static async getProductBySlug(slug: string): Promise<V2ApiResponse<Product>> {
-    const response = await api.get(endpoints.products.bySlug(slug));
-    return response.data;
+    try {
+      const response = await api.get(endpoints.products.bySlug(slug));
+      
+      // Check if the response indicates a 404 (handled by interceptor)
+      if (response.status === 404 || !response.data.success) {
+        return {
+          success: false,
+          error: response.data.error || 'Product not found',
+          data: null,
+        } as V2ApiResponse<Product>;
+      }
+      
+      return response.data;
+    } catch (error) {
+      ErrorHandler.logError(error, 'ProductService.getProductBySlug');
+      
+      // This should rarely happen now since 404s are handled by the interceptor
+      if (ErrorHandler.isNotFound(error)) {
+        return {
+          success: false,
+          error: 'Product not found',
+          data: null,
+        } as V2ApiResponse<Product>;
+      }
+      
+      throw ErrorHandler.handleApiError(error);
+    }
   }
 
   // Get trending products

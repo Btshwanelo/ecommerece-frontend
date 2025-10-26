@@ -205,6 +205,15 @@ export default function CategoryProductsPage() {
       setLoading(true);
       setError(null);
 
+      // Don't fetch products if category doesn't exist (for non-special categories)
+      if (!isSpecialCategory(categorySlug) && category === null) {
+        console.warn("Skipping product fetch - category not found:", categorySlug);
+        setProducts([]);
+        setTotalProducts(0);
+        setTotalPages(1);
+        return;
+      }
+
       const filters = buildFilters();
       console.log("Fetching products with filters:", filters);
 
@@ -221,7 +230,7 @@ export default function CategoryProductsPage() {
         setTotalProducts(response.total || 0);
         setTotalPages(response.pages || 1);
       } else {
-        console.error("Failed to fetch products:", response.error);
+        console.warn("Failed to fetch products:", response.error);
         setError(response.error || "Failed to fetch products");
         setProducts([]);
       }
@@ -232,7 +241,7 @@ export default function CategoryProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [categorySlug, buildFilters]);
+  }, [categorySlug, buildFilters, category]);
 
   // Fetch category details
   const fetchCategory = useCallback(async () => {
@@ -247,10 +256,14 @@ export default function CategoryProductsPage() {
       if (response.success) {
         setCategory(response.category || response.data || null);
       } else {
-        console.error("Failed to fetch category:", response.error);
+        console.warn("Category not found:", response.error);
+        // Set category to null to show "not found" state
+        setCategory(null);
       }
     } catch (err) {
       console.error("Error fetching category:", err);
+      // Set category to null to show "not found" state
+      setCategory(null);
     }
   }, [categorySlug]);
 
@@ -314,7 +327,7 @@ export default function CategoryProductsPage() {
     fetchAttributes();
   }, [fetchCategory, fetchAttributes]);
 
-  // Fetch products when filters change
+  // Fetch products when filters change or category is loaded
   useEffect(() => {
     fetchProductsWithFilters();
   }, [fetchProductsWithFilters]);
@@ -418,6 +431,43 @@ export default function CategoryProductsPage() {
       selectedCollarTypes.length > 0
     );
   };
+
+  // Handle category not found
+  if (!isSpecialCategory(categorySlug) && category === null && !loading) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
+                <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.709M15 6.291A7.962 7.962 0 0112 4c-2.34 0-4.29 1.009-5.824 2.709" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Category Not Found</h1>
+              <p className="text-gray-600 mb-6">
+                The category "{categorySlug}" you're looking for doesn't exist or has been removed.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => window.history.back()}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={() => window.location.href = '/products'}
+                  className="px-4 py-2 text-sm font-medium text-white bg-orange-500 border border-transparent rounded-md hover:bg-orange-600 transition-colors"
+                >
+                  Browse All Products
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
