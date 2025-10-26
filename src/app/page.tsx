@@ -5,9 +5,9 @@ import Layout from "@/components/layout/Layout";
 import HeroSection from "@/components/ui/HeroSection";
 import ProductCard from "@/components/product/ProductCard";
 import { Product } from "@/types";
-import productService from "@/services/productService";
+import { ProductService } from "@/services/v2";
 import { useApi } from "@/hooks/useApi";
-import { ProductResponse } from "@/services/productService";
+import { V2ProductResponse } from "@/types";
 import { useStoreConfig, useFeatures } from "@/hooks/useStoreConfig";
 
 export default function Home() {
@@ -20,13 +20,13 @@ console.log('Render Home Page');
     loading: featuredLoading,
     error: featuredError,
     execute: fetchFeaturedProducts,
-  } = useApi<ProductResponse>(
-    productService.getFeaturedProducts.bind(productService)
+  } = useApi<V2ProductResponse>(
+    () => ProductService.getProducts({ limit: 8, sort: 'newest' })
   );
 
   // Memoize the fetch function to prevent infinite loops
   const fetchFeatured = useCallback(() => {
-    fetchFeaturedProducts(8);
+    fetchFeaturedProducts();
   }, [fetchFeaturedProducts]);
 
   useEffect(() => {
@@ -71,7 +71,7 @@ console.log('Render Home Page');
                 Error loading featured products
               </p>
               <button
-                onClick={() => fetchFeaturedProducts(8)}
+                onClick={() => fetchFeaturedProducts()}
                 className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
               >
                 Try Again
