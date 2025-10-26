@@ -52,7 +52,7 @@ export default function SubcategoriesPage() {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v2', '/api/v1')}/categories`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/categories`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -77,8 +77,8 @@ export default function SubcategoriesPage() {
     try {
       const token = localStorage.getItem("token");
       const url = editingSubcategory 
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v2', '/api/v1')}/subcategories/${editingSubcategory._id}`
-        : `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v2', '/api/v1')}/subcategories`;
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/subcategories/${editingSubcategory._id}`
+        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/subcategories`;
       
       const method = editingSubcategory ? "PUT" : "POST";
       
@@ -125,7 +125,7 @@ export default function SubcategoriesPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v2', '/api/v1')}/subcategories/${subcategoryId}`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/subcategories/${subcategoryId}`,
         {
           method: "DELETE",
           headers: {
