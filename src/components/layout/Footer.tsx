@@ -7,11 +7,11 @@ const Footer = () => {
 
   const footerLinks = {
     products: [
-      { name: 'Shoes', href: '/products?category=shoes' },
-      { name: 'Clothing', href: '/products?category=clothing' },
-      { name: 'Accessories', href: '/products?category=accessories' },
-      { name: 'New Arrivals', href: '/products?category=new' },
-      { name: 'Sale', href: '/products?sale=true' },
+      { name: 'Shoes', href: '/products/category/shoes' },
+      { name: 'Clothing', href: '/products/category/clothing' },
+      { name: 'Accessories', href: '/products/category/accessories' },
+      { name: 'New Arrivals', href: '/products/category/new' },
+      { name: 'Sale', href: '/products/category/sales' },
     ],
     support: [
       { name: 'Help', href: '/help' },

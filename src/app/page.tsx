@@ -120,7 +120,7 @@ console.log('Render Home Page');
                   every runner.
                 </p>
                 <a
-                  href="/products?category=running"
+                  href="/products/category/running"
                   className="inline-flex items-center text-sm font-semibold hover:underline"
                 >
                   Shop Running
@@ -136,7 +136,7 @@ console.log('Render Home Page');
                   Dominate the court with our performance basketball shoes.
                 </p>
                 <a
-                  href="/products?category=basketball"
+                  href="/products/category/basketball"
                   className="inline-flex items-center text-sm font-semibold hover:underline"
                 >
                   Shop Basketball
@@ -152,7 +152,7 @@ console.log('Render Home Page');
                   Street style meets comfort in our lifestyle collection.
                 </p>
                 <a
-                  href="/products?category=lifestyle"
+                  href="/products/category/lifestyle"
                   className="inline-flex items-center text-sm font-semibold hover:underline"
                 >
                   Shop Lifestyle

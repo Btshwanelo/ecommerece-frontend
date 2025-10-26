@@ -33,6 +33,30 @@ export class ProductService {
     return response.data;
   }
 
+  // Get products by category slug
+  static async getProductsByCategorySlug(categorySlug: string, filters: ProductFilters = {}): Promise<V2ProductResponse> {
+    const params = new URLSearchParams();
+    
+    // Add all filter parameters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (Array.isArray(value)) {
+          value.forEach(v => params.append(`${key}[]`, v.toString()));
+        } else {
+          params.append(key, value.toString());
+        }
+      }
+    });
+
+    const url = `/products/category/slug/${categorySlug}?${params.toString()}`;
+    console.log("Calling products by category slug API:", url);
+    console.log("Filters:", filters);
+    const response = await api.get(url);
+    console.log("Raw API response:", response);
+    console.log("Response data:", response.data);
+    return response.data;
+  }
+
   // Search products
   static async searchProducts(query: string, filters: ProductFilters = {}): Promise<V2ProductResponse> {
     const params = new URLSearchParams();

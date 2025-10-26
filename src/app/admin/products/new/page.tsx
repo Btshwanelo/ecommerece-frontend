@@ -425,9 +425,20 @@ export default function NewProductPage() {
               
               // Add variant fields
               variantFormData.append('sku', variant.sku || '');
-              if (variant.colorId) variantFormData.append('colorId', variant.colorId);
-              if (variant.sizeId) variantFormData.append('sizeId', variant.sizeId);
-              if (variant.genderId) variantFormData.append('genderId', variant.genderId);
+              
+              // Handle attribute IDs (they might be objects or strings)
+              if (variant.colorId) {
+                const colorId = typeof variant.colorId === 'string' ? variant.colorId : variant.colorId._id;
+                if (colorId) variantFormData.append('colorId', colorId);
+              }
+              if (variant.sizeId) {
+                const sizeId = typeof variant.sizeId === 'string' ? variant.sizeId : variant.sizeId._id;
+                if (sizeId) variantFormData.append('sizeId', sizeId);
+              }
+              if (variant.genderId) {
+                const genderId = typeof variant.genderId === 'string' ? variant.genderId : variant.genderId._id;
+                if (genderId) variantFormData.append('genderId', genderId);
+              }
               
               // Add pricing
               if (variant.pricing) {

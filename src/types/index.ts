@@ -206,6 +206,11 @@ export interface CartItem {
   quantity: number;
   price: number;
   total: number;
+  // V2 API structure
+  productId?: Product; // V2 API uses productId instead of product
+  unitPrice?: number; // V2 API uses unitPrice
+  totalPrice?: number; // V2 API uses totalPrice
+  addedAt?: string; // V2 API uses addedAt instead of createdAt
   createdAt: string;
   updatedAt: string;
 }
@@ -226,6 +231,16 @@ export interface Cart {
     code: string;
     discount: number;
   };
+  // V2 API structure
+  totals?: {
+    subtotal: number;
+    taxAmount: number;
+    shippingAmount: number;
+    discountAmount: number;
+    total: number;
+  };
+  appliedCoupons?: any[];
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -396,14 +411,24 @@ export interface ProductFilters {
   categoryId?: string;
   brandId?: string;
   genderId?: string;
+  genderIds?: string[];
   seasonId?: string;
+  seasonIds?: string[];
   styleId?: string;
+  styleIds?: string[];
   patternId?: string;
+  patternIds?: string[];
   shoeHeightId?: string;
+  shoeHeightIds?: string[];
   fitId?: string;
+  fitIds?: string[];
   collarTypeId?: string;
+  collarTypeIds?: string[];
   materialIds?: string[];
   occasionIds?: string[];
+  colorIds?: string[];
+  sizeIds?: string[];
+  salePrice?: boolean;
   minPrice?: number;
   maxPrice?: number;
   minSalePrice?: number;
@@ -432,6 +457,7 @@ export interface V2ApiResponse<T> {
   data?: T;
   product?: T; // For product responses
   order?: T; // For order responses
+  category?: T; // For category responses
   error?: string;
   message?: string;
 }
@@ -467,9 +493,12 @@ export interface V2PaginatedResponse<T> {
 export interface V2ProductResponse {
   success: boolean;
   products: Product[];
+  data?: Product[]; // Alternative property name
   total: number;
   page: number;
   pages: number;
+  error?: string; // Error message if success is false
+  category?: string; // Category slug for category-specific responses
   filters?: {
     brands: Brand[];
     colors: Color[];

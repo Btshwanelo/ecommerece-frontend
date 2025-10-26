@@ -28,11 +28,11 @@ const Header = () => {
   const { format } = useCurrency();
 
   const navigation = [
-    { name: 'New & Featured', href: '/products?category=new' },
-    { name: 'Men', href: '/products?category=men' },
-    { name: 'Women', href: '/products?category=women' },
-    { name: 'Kids', href: '/products?category=kids' },
-    { name: 'Sale', href: '/products?sale=true' },
+    { name: 'New & Featured', href: '/products/category/new' },
+    { name: 'Men', href: '/products/category/men' },
+    { name: 'Women', href: '/products/category/women' },
+    { name: 'Kids', href: '/products/category/kids' },
+    { name: 'Sale', href: '/products/category/sales' },
   ];
 
   // Check authentication status

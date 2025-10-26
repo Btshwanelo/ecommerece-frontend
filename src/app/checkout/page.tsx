@@ -68,16 +68,34 @@ export default function CheckoutPage() {
   const [saveNewAddress, setSaveNewAddress] = useState(false);
 
   // Derived totals from v2 cart structure
-  const totals = useMemo(
-    () => ({
-      subtotal: cart?.subtotal || 0,
-      shipping: cart?.shipping || 0,
-      tax: cart?.tax || 0,
-      discount: cart?.discount || 0,
-      total: cart?.total || 0,
-    }),
-    [cart]
-  );
+  const totals = useMemo(() => {
+    if (!cart) {
+      return {
+        subtotal: 0,
+        shipping: 0,
+        tax: 0,
+        discount: 0,
+        total: 0,
+      };
+    }
+
+    // Use cart.totals if available (v2 structure), otherwise fallback to cart properties
+    const cartTotals = (cart as any).totals || cart;
+    
+    // Get selected delivery option cost
+    const selectedDelivery = deliveryOptions.find(
+      (opt) => opt._id === selectedDeliveryId || opt.id === selectedDeliveryId
+    );
+    const deliveryCost = selectedDelivery ? (selectedDelivery.cost || selectedDelivery.price || 0) : 0;
+
+    return {
+      subtotal: cartTotals.subtotal || 0,
+      shipping: deliveryCost, // Use selected delivery cost instead of cart shipping
+      tax: cartTotals.taxAmount || cartTotals.tax || 0,
+      discount: cartTotals.discountAmount || cartTotals.discount || 0,
+      total: (cartTotals.subtotal || 0) + deliveryCost + (cartTotals.taxAmount || cartTotals.tax || 0) - (cartTotals.discountAmount || cartTotals.discount || 0),
+    };
+  }, [cart, deliveryOptions, selectedDeliveryId]);
 
   const formatPrice = (price: number) => {
     return format(price);
@@ -364,14 +382,8 @@ export default function CheckoutPage() {
         useExistingAddress: useExistingAddress,
         selectedAddressId: selectedAddressId,
         isLoggedIn: isLoggedIn,
-        amount: cart?.total || 0,
-        totals: {
-          subtotal: cart?.subtotal || 0,
-          shipping: cart?.shipping || 0,
-          tax: cart?.tax || 0,
-          discount: cart?.discount || 0,
-          total: cart?.total || 0,
-        },
+        amount: totals.total,
+        totals: totals,
       };
 
       // Store checkout data in sessionStorage for payment step
@@ -788,7 +800,7 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                       <div className="text-sm font-semibold">
-                        {formatPrice(opt.price || opt.amount || 0)}
+                        {formatPrice(opt.cost || opt.price || opt.amount || 0)}
                       </div>
                     </label>
                   ))}
@@ -814,7 +826,7 @@ export default function CheckoutPage() {
                         {item.quantity}
                       </span>
                       <span className="font-medium">
-                        {formatPrice(item.totalPrice || item.unitPrice || 0)}
+                        {formatPrice(item.totalPrice || (item.unitPrice * item.quantity) || 0)}
                       </span>
                     </div>
                   ))}
