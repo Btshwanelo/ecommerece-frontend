@@ -65,7 +65,7 @@ export class ProductService {
           products: [],
           total: 0,
           pages: 1,
-        } as V2ProductResponse;
+        } as unknown as V2ProductResponse;
       }
       
       return response.data;
@@ -80,7 +80,7 @@ export class ProductService {
           products: [],
           total: 0,
           pages: 1,
-        } as V2ProductResponse;
+        } as unknown as V2ProductResponse;
       }
       
       throw ErrorHandler.handleApiError(error);
@@ -123,7 +123,7 @@ export class ProductService {
           success: false,
           error: response.data.error || 'Product not found',
           data: null,
-        } as V2ApiResponse<Product>;
+        } as unknown as V2ApiResponse<Product>;
       }
       
       return response.data;
@@ -136,7 +136,7 @@ export class ProductService {
           success: false,
           error: 'Product not found',
           data: null,
-        } as V2ApiResponse<Product>;
+        } as unknown as V2ApiResponse<Product>;
       }
       
       throw ErrorHandler.handleApiError(error);
