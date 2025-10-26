@@ -4,7 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Trash2, Plus, Minus, ArrowLeft, User } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Minus,
+  ArrowLeft,
+  User,
+  ShoppingCart,
+  AlertCircle,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { Cart, CartItem } from "@/types";
 import { CartService, UserService } from "@/services/v2";
@@ -169,397 +177,424 @@ export default function CartPage() {
     setImageErrors((prev) => new Set(prev).add(itemId));
   };
 
-  if (cartLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
-                <div className="bg-white rounded-lg p-6">
-                  <div className="space-y-6">
-                    {[...Array(3)].map((_, index) => (
-                      <div key={index} className="flex space-x-4">
-                        <div className="w-20 h-20 bg-gray-200 rounded-lg"></div>
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                        </div>
+  // Loading State Component
+  const LoadingState = () => (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-lg p-6">
+                <div className="space-y-6">
+                  {[...Array(3)].map((_, index) => (
+                    <div key={index} className="flex space-x-4">
+                      <div className="w-20 h-20 bg-gray-200 rounded-lg"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="bg-white rounded-lg p-6 h-64"></div>
+            </div>
+            <div className="bg-white rounded-lg p-6 h-64"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Error State Component
+  const ErrorState = () => (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="bg-white rounded-lg shadow-sm p-8 max-w-md w-full text-center">
+            <div className="flex justify-center mb-4">
+              <div className="bg-red-100 rounded-full p-3">
+                <AlertCircle className="h-8 w-8 text-red-600" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Unable to Load Cart
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {cartError || "We couldn't load your cart. Please try again."}
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={fetchCart}
+                className="w-full bg-black text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+              >
+                Try Again
+              </button>
+              <Link
+                href="/"
+                className="block w-full bg-gray-100 text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Return to Home
+              </Link>
             </div>
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (cartError) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto text-center">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-black mb-2">{storeName}</h1>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Error Loading Cart
+  // Empty Cart State Component
+  const EmptyCartState = () => (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="bg-white rounded-lg shadow-sm p-8 max-w-md w-full text-center">
+            <div className="flex justify-center mb-4">
+              <div className="bg-gray-100 rounded-full p-4">
+                <ShoppingCart className="h-12 w-12 text-gray-400" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Your Cart is Empty
             </h2>
-            <p className="text-gray-600 mb-8">{cartError}</p>
+            <p className="text-gray-600 mb-6">
+              Looks like you haven't added anything to your cart yet. Start
+              shopping to add items!
+            </p>
+            <Link
+              href="/products"
+              className="inline-block bg-black text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+            >
+              Start Shopping
+            </Link>
           </div>
-
-          <button
-            onClick={() => fetchCart()}
-            className="inline-flex items-center px-8 py-3 bg-black text-white font-semibold hover:bg-gray-800 transition-colors"
-          >
-            Try Again
-          </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (!cart || cartItems.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto text-center">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-black mb-2">{storeName}</h1>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Your cart is empty
-            </h2>
-            <p className="text-gray-600 mb-8">
-              Looks like you haven't added any items to your cart yet.
-            </p>
-          </div>
-
+  // Main Cart Content Component
+  const CartContent = () => (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Shopping Cart</h1>
           <Link
             href="/products"
-            className="inline-flex items-center px-8 py-3 bg-black text-white font-semibold hover:bg-gray-800 transition-colors"
+            className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <ArrowLeft className="mr-2 h-5 w-5" />
+            <ArrowLeft className="h-4 w-4 mr-1" />
             Continue Shopping
           </Link>
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <Layout>
-      <div className="min-h-screen bg-gray-50 py-8">
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           {/* Header */}
-           <div className="mb-6 sm:mb-8">
-             <h1 className="text-2xl sm:text-4xl font-bold text-black mb-2">
-               Shopping Cart
-             </h1>
-             <p className="text-sm sm:text-base text-gray-600">
-               {cartItems.length} item{cartItems.length !== 1 ? "s" : ""} in your
-               cart
-             </p>
-           </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Cart Items */}
+          <div className="lg:col-span-2">
+            <div className="bg-white shadow-sm overflow-hidden">
+              <div className="p-4 sm:p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Cart Items ({cartItems.length})
+                </h2>
+                <div className="space-y-4">
+                  {cartItems.map((item: any) => (
+                    <motion.div
+                      key={item._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="border-b border-gray-200 pb-4 last:border-b-0"
+                    >
+                      {/* Mobile Layout */}
+                      <div className="flex sm:hidden space-x-4">
+                        {/* Product Image */}
+                        <div className="flex-shrink-0">
+                          <div className="w-20 h-20 relative bg-gray-100 overflow-hidden">
+                            {getProductImage(item) &&
+                            !imageErrors.has(item._id) ? (
+                              <Image
+                                src={getProductImage(item)!}
+                                alt={
+                                  (item.productId || item.product)?.name ||
+                                  "Product"
+                                }
+                                fill
+                                className="object-cover"
+                                onError={() => handleImageError(item._id)}
+                                unoptimized={getProductImage(item)?.includes(
+                                  "localhost"
+                                )}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                <div className="text-center">
+                                  <div className="text-lg mb-1">📷</div>
+                                  <div className="text-xs">No Image</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-            {/* Cart Items */}
-            <div className="lg:col-span-2">
-              <div className="bg-white shadow-sm">
-                <div className="p-4 sm:p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Cart Items
-                  </h2>
+                        {/* Product Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1 pr-2">
+                              <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+                                {(item.productId || item.product)?.name ||
+                                  "Product"}
+                              </h3>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {(item.productId || item.product)?.categoryId
+                                  ?.name || "Uncategorized"}
+                              </p>
+                              <p className="text-sm font-medium text-gray-900 mt-1">
+                                {formatPrice(
+                                  (item.productId || item.product)?.pricing
+                                    ?.salePrice ||
+                                    (item.productId || item.product)?.pricing
+                                      ?.basePrice ||
+                                    0
+                                )}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => removeItem(item._id)}
+                              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
 
-                   <div className="space-y-4 sm:space-y-6">
-                     {cartItems.map((item) => (
-                       <motion.div
-                         key={item._id}
-                         initial={{ opacity: 0, y: 20 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         exit={{ opacity: 0, y: -20 }}
-                         className="border border-gray-200 p-3 sm:p-4"
-                       >
-                         {/* Mobile Layout */}
-                         <div className="flex flex-col sm:hidden space-y-3">
-                           {/* Top Row: Image and Product Info */}
-                           <div className="flex items-start space-x-3">
-                             <div className="flex-shrink-0">
-                               <div className="w-16 h-16 relative bg-gray-100 overflow-hidden">
-                                 {getProductImage(item) &&
-                                 !imageErrors.has(item._id) ? (
-                                   <Image
-                                     src={getProductImage(item)!}
-                                     alt={
-                                       (item.productId || item.product)?.name ||
-                                       "Product"
-                                     }
-                                     fill
-                                     className="object-cover"
-                                     onError={() => handleImageError(item._id)}
-                                     unoptimized={getProductImage(item)?.includes(
-                                       "localhost"
-                                     )}
-                                   />
-                                 ) : (
-                                   <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                     <div className="text-center">
-                                       <div className="text-sm mb-1">📷</div>
-                                       <div className="text-xs">No Image</div>
-                                     </div>
-                                   </div>
-                                 )}
-                               </div>
-                             </div>
-                             
-                             <div className="flex-1 min-w-0">
-                               <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
-                                 {(item.productId || item.product)?.name ||
-                                   "Product"}
-                               </h3>
-                               <p className="text-xs text-gray-500 mt-1">
-                                 {(item.productId || item.product)?.categoryId
-                                   ?.name || "Uncategorized"}
-                               </p>
-                               <p className="text-sm font-medium text-gray-900 mt-1">
-                                 {formatPrice(
-                                   (item.productId || item.product)?.pricing
-                                     ?.salePrice ||
-                                     (item.productId || item.product)?.pricing
-                                       ?.basePrice ||
-                                     0
-                                 )}
-                               </p>
-                             </div>
-                             
-                             <button
-                               onClick={() => removeItem(item._id)}
-                               className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                             >
-                               <Trash2 className="h-4 w-4" />
-                             </button>
-                           </div>
-                           
-                           {/* Bottom Row: Quantity and Total */}
-                           <div className="flex items-center justify-between">
-                             <div className="flex items-center space-x-3">
-                               <span className="text-sm text-gray-600">Qty:</span>
-                               <div className="flex items-center space-x-2">
-                                 <button
-                                   onClick={() =>
-                                     updateQuantity(item._id, item.quantity - 1)
-                                   }
-                                   disabled={isUpdating}
-                                   className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
-                                 >
-                                   <Minus className="h-4 w-4" />
-                                 </button>
-                                 
-                                 <span className="w-8 text-center text-sm font-medium">
-                                   {item.quantity}
-                                 </span>
-                                 
-                                 <button
-                                   onClick={() =>
-                                     updateQuantity(item._id, item.quantity + 1)
-                                   }
-                                   disabled={isUpdating}
-                                   className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
-                                 >
-                                   <Plus className="h-4 w-4" />
-                                 </button>
-                               </div>
-                             </div>
-                             
-                             <div className="text-right">
-                               <p className="text-sm font-semibold text-gray-900">
-                                 {formatPrice(item.totalPrice || item.price || 0)}
-                               </p>
-                             </div>
-                           </div>
-                         </div>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() =>
+                                  updateQuantity(item._id, item.quantity - 1)
+                                }
+                                disabled={isUpdating}
+                                className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </button>
 
-                         {/* Desktop Layout */}
-                         <div className="hidden sm:flex items-center space-x-4">
-                           {/* Product Image */}
-                           <div className="flex-shrink-0">
-                             <div className="w-20 h-20 relative bg-gray-100 overflow-hidden">
-                               {getProductImage(item) &&
-                               !imageErrors.has(item._id) ? (
-                                 <Image
-                                   src={getProductImage(item)!}
-                                   alt={
-                                     (item.productId || item.product)?.name ||
-                                     "Product"
-                                   }
-                                   fill
-                                   className="object-cover"
-                                   onError={() => handleImageError(item._id)}
-                                   unoptimized={getProductImage(item)?.includes(
-                                     "localhost"
-                                   )}
-                                 />
-                               ) : (
-                                 <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                   <div className="text-center">
-                                     <div className="text-lg mb-1">📷</div>
-                                     <div className="text-xs">No Image</div>
-                                   </div>
-                                 </div>
-                               )}
-                             </div>
-                           </div>
+                              <span className="w-8 text-center text-sm font-medium">
+                                {item.quantity}
+                              </span>
 
-                           {/* Product Details */}
-                           <div className="flex-1 min-w-0">
-                             <h3 className="text-sm font-medium text-gray-900 truncate">
-                               {(item.productId || item.product)?.name ||
-                                 "Product"}
-                             </h3>
-                             <p className="text-sm text-gray-500 truncate">
-                               {(item.productId || item.product)?.categoryId
-                                 ?.name || "Uncategorized"}
-                             </p>
-                             <p className="text-sm font-medium text-gray-900">
-                               {formatPrice(
-                                 (item.productId || item.product)?.pricing
-                                   ?.salePrice ||
-                                   (item.productId || item.product)?.pricing
-                                     ?.basePrice ||
-                                   0
-                               )}
-                             </p>
-                           </div>
+                              <button
+                                onClick={() =>
+                                  updateQuantity(item._id, item.quantity + 1)
+                                }
+                                disabled={isUpdating}
+                                className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
 
-                           {/* Quantity Controls */}
-                           <div className="flex items-center space-x-2">
-                             <button
-                               onClick={() =>
-                                 updateQuantity(item._id, item.quantity - 1)
-                               }
-                               disabled={isUpdating}
-                               className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
-                             >
-                               <Minus className="h-4 w-4" />
-                             </button>
+                            <div className="text-right">
+                              <p className="text-sm font-semibold text-gray-900">
+                                {formatPrice(
+                                  item.totalPrice || item.price || 0
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-                             <span className="w-8 text-center text-sm font-medium">
-                               {item.quantity}
-                             </span>
+                      {/* Desktop Layout */}
+                      <div className="hidden sm:flex items-center space-x-4">
+                        {/* Product Image */}
+                        <div className="flex-shrink-0">
+                          <div className="w-20 h-20 relative bg-gray-100 overflow-hidden">
+                            {getProductImage(item) &&
+                            !imageErrors.has(item._id) ? (
+                              <Image
+                                src={getProductImage(item)!}
+                                alt={
+                                  (item.productId || item.product)?.name ||
+                                  "Product"
+                                }
+                                fill
+                                className="object-cover"
+                                onError={() => handleImageError(item._id)}
+                                unoptimized={getProductImage(item)?.includes(
+                                  "localhost"
+                                )}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                <div className="text-center">
+                                  <div className="text-lg mb-1">📷</div>
+                                  <div className="text-xs">No Image</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                             <button
-                               onClick={() =>
-                                 updateQuantity(item._id, item.quantity + 1)
-                               }
-                               disabled={isUpdating}
-                               className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
-                             >
-                               <Plus className="h-4 w-4" />
-                             </button>
-                           </div>
+                        {/* Product Details */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {(item.productId || item.product)?.name ||
+                              "Product"}
+                          </h3>
+                          <p className="text-sm text-gray-500 truncate">
+                            {(item.productId || item.product)?.categoryId
+                              ?.name || "Uncategorized"}
+                          </p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {formatPrice(
+                              (item.productId || item.product)?.pricing
+                                ?.salePrice ||
+                                (item.productId || item.product)?.pricing
+                                  ?.basePrice ||
+                                0
+                            )}
+                          </p>
+                        </div>
 
-                           {/* Item Total */}
-                           <div className="text-right">
-                             <p className="text-sm font-medium text-gray-900">
-                               {formatPrice(item.totalPrice || item.price || 0)}
-                             </p>
-                           </div>
+                        {/* Quantity Controls */}
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() =>
+                              updateQuantity(item._id, item.quantity - 1)
+                            }
+                            disabled={isUpdating}
+                            className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </button>
 
-                           {/* Remove Button */}
-                           <button
-                             onClick={() => removeItem(item._id)}
-                             className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                           >
-                             <Trash2 className="h-5 w-5" />
-                           </button>
-                         </div>
-                       </motion.div>
-                     ))}
-                   </div>
+                          <span className="w-8 text-center text-sm font-medium">
+                            {item.quantity}
+                          </span>
+
+                          <button
+                            onClick={() =>
+                              updateQuantity(item._id, item.quantity + 1)
+                            }
+                            disabled={isUpdating}
+                            className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        {/* Item Total */}
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-900">
+                            {formatPrice(item.totalPrice || item.price || 0)}
+                          </p>
+                        </div>
+
+                        {/* Remove Button */}
+                        <button
+                          onClick={() => removeItem(item._id)}
+                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             </div>
+          </div>
 
-             {/* Order Summary */}
-             <div className="lg:col-span-1">
-               <div className="bg-white shadow-sm p-4 sm:p-6 sticky top-4 sm:top-8">
-                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                   Order Summary
-                 </h2>
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="bg-white shadow-sm p-4 sm:p-6 sticky top-4 sm:top-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Order Summary
+              </h2>
 
-                 <div className="space-y-3">
-                   <div className="flex justify-between text-sm">
-                     <span className="text-gray-600">Subtotal</span>
-                     <span className="font-medium">{formatPrice(subtotal)}</span>
-                   </div>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium">{formatPrice(subtotal)}</span>
+                </div>
 
-                   <div className="flex justify-between text-sm">
-                     <span className="text-gray-600">Shipping</span>
-                     <span className="font-medium">
-                       {shipping === 0 ? "Free" : formatPrice(shipping)}
-                     </span>
-                   </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Shipping</span>
+                  <span className="font-medium">
+                    {shipping === 0 ? "Free" : formatPrice(shipping)}
+                  </span>
+                </div>
 
-                   <div className="flex justify-between text-sm">
-                     <span className="text-gray-600">Tax</span>
-                     <span className="font-medium">{formatPrice(tax)}</span>
-                   </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Tax</span>
+                  <span className="font-medium">{formatPrice(tax)}</span>
+                </div>
 
-                   {discount > 0 && (
-                     <div className="flex justify-between text-sm">
-                       <span className="text-gray-600">Discount</span>
-                       <span className="font-medium text-green-600">
-                         -{formatPrice(discount)}
-                       </span>
-                     </div>
-                   )}
+                {discount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Discount</span>
+                    <span className="font-medium text-green-600">
+                      -{formatPrice(discount)}
+                    </span>
+                  </div>
+                )}
 
-                   <div className="border-t border-gray-200 pt-3">
-                     <div className="flex justify-between text-base font-semibold">
-                       <span>Total</span>
-                       <span>{formatPrice(total)}</span>
-                     </div>
-                   </div>
-                 </div>
+                <div className="border-t border-gray-200 pt-3">
+                  <div className="flex justify-between text-base font-semibold">
+                    <span>Total</span>
+                    <span>{formatPrice(total)}</span>
+                  </div>
+                </div>
+              </div>
 
-                 {/* Free shipping message */}
-                 {subtotal < 50 && (
-                   <div className="mt-4 p-3 bg-blue-50 border border-blue-200 ">
-                     <p className="text-sm text-blue-800">
-                       Add {formatPrice(50 - subtotal)} more for free shipping
-                     </p>
-                   </div>
-                 )}
+              {/* Free shipping message */}
+              {subtotal < 50 && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    Add {formatPrice(50 - subtotal)} more for free shipping
+                  </p>
+                </div>
+              )}
 
-                 {/* Checkout Button */}
-                 <Link
-                   href="/checkout"
-                   onClick={handleCheckoutClick}
-                   className="mt-6 w-full bg-black text-white py-3 px-4 font-semibold hover:bg-gray-800 transition-colors text-center block "
-                 >
-                   Proceed to Checkout
-                 </Link>
+              {/* Checkout Button */}
+              <Link
+                href="/checkout"
+                onClick={handleCheckoutClick}
+                className="mt-6 w-full bg-black text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800 transition-colors text-center block"
+              >
+                Proceed to Checkout
+              </Link>
 
-                 {/* Continue Shopping */}
-                 <Link
-                   href="/products"
-                   className="mt-3 w-full bg-gray-100 text-gray-900 py-3 px-4 font-semibold hover:bg-gray-200 transition-colors text-center block"
-                 >
-                   Continue Shopping
-                 </Link>
-               </div>
-             </div>
+              {/* Continue Shopping */}
+              <Link
+                href="/products"
+                className="mt-3 w-full bg-gray-100 text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-center block"
+              >
+                Continue Shopping
+              </Link>
+            </div>
           </div>
         </div>
-
-        {/* Authentication Drawer */}
-        <AuthDrawer
-          isOpen={showAuthDrawer}
-          onClose={() => setShowAuthDrawer(false)}
-          onAuthSuccess={handleAuthSuccess}
-        />
       </div>
+    </div>
+  );
+
+  // Main render with Layout wrapper
+  return (
+    <Layout>
+      {cartLoading && <LoadingState />}
+      {!cartLoading && cartError && <ErrorState />}
+      {!cartLoading && !cartError && cartItems.length === 0 && (
+        <EmptyCartState />
+      )}
+      {!cartLoading && !cartError && cartItems.length > 0 && <CartContent />}
+
+      {/* Authentication Drawer */}
+      <AuthDrawer
+        isOpen={showAuthDrawer}
+        onClose={() => setShowAuthDrawer(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </Layout>
   );
 }
