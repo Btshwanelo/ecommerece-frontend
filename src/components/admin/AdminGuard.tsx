@@ -3,13 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/LoadingSpinner";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import { UserService } from "@/services/v2";
+import { User } from "@/types";
 
 interface AdminGuardProps {
   children: React.ReactNode;
@@ -29,16 +24,11 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         return;
       }
 
-      // Verify token and get user info
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // Verify token and get user info using v2 service
+      const response = await UserService.getProfile();
 
-      if (response.ok) {
-        const data = await response.json();
-        const userData = data.user || data.data;
+      if (response.success && response.data) {
+        const userData = response.data;
         
         // Check if user is admin
         if (userData.role !== "admin") {

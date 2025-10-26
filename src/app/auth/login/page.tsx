@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { UserService, LoginCredentials } from '@/services/v2';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -52,35 +53,42 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const credentials: LoginCredentials = {
+        email: formData.email,
+        password: formData.password,
+      };
 
-      const data = await response.json();
+      const response = await UserService.login(credentials);
 
-      if (response.ok && data.success) {
-        // Store token and user data
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+      if (response.success) {
+        // Handle both response structures: direct properties or nested in data
+        const user = (response as any).user || (response as any).data?.user;
+        const token = (response as any).token || (response as any).data?.token;
         
-        console.log('Login successful:', data.user);
-        
-        // Redirect based on user role
-        if (data.user.role === 'admin') {
-          router.push('/admin');
+        if (user && token) {
+          // Store token and user data
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(user));
+          
+          console.log('Login successful:', user);
+          
+          // Redirect based on user role
+          if (user.role === 'admin') {
+            router.push('/admin');
+          } else {
+            router.push('/');
+          }
         } else {
-          router.push('/');
+          setErrors({ general: 'Invalid response format' });
         }
       } else {
-        setErrors({ general: data.error || 'Invalid email or password' });
+        setErrors({ general: response.error || 'Invalid email or password' });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      setErrors({ general: 'Network error. Please try again.' });
+      setErrors({ 
+        general: error.response?.data?.error || 'Network error. Please try again.' 
+      });
     } finally {
       setIsLoading(false);
     }
