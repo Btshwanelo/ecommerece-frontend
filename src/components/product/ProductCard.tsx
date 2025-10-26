@@ -75,8 +75,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   // Handle both v1 and v2 API structures
-  const basePrice = product.pricing?.basePrice || product.price || 0;
-  const salePrice = product.pricing?.salePrice || product.salePrice;
+  const basePrice = product.pricing?.basePrice || 0;
+  const salePrice = product.pricing?.salePrice;
 
   const discountPercentage = salePrice
     ? Math.round(((basePrice - salePrice) / basePrice) * 100)
@@ -101,9 +101,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
             return primaryImage.url;
           }
           // v1 API fallback
-          if (primaryImage.downloadUrl) {
-            console.log("Using primary image (v1):", primaryImage.downloadUrl); // Debug log
-            return primaryImage.downloadUrl;
+          if (primaryImage.url) {
+            console.log("Using primary image (v1):", primaryImage.url); // Debug log
+            return primaryImage.url;
           }
         }
         // If no primary image, use the first image
@@ -111,14 +111,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
           console.log("Using first image (v2):", product.images[0].url); // Debug log
           return product.images[0].url;
         }
-        if (product.images[0].downloadUrl) {
-          console.log("Using first image (v1):", product.images[0].downloadUrl); // Debug log
-          return product.images[0].downloadUrl;
-        }
-        // Fallback to directUrl if downloadUrl is not available
-        if (product.images[0].directUrl) {
-          console.log("Using directUrl:", product.images[0].directUrl); // Debug log
-          return product.images[0].directUrl;
+        if (product.images[0].url) {
+          console.log("Using first image (v1):", product.images[0].url); // Debug log
+          return product.images[0].url;
         }
       }
     }
@@ -132,8 +127,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
     setImageError(true);
   };
 
-  const isInStock =
-    (product.inventory?.stockQuantity || product.inventory?.quantity || 0) > 0;
+  const isInStock = (product.inventory?.stockQuantity || 0) > 0;
   const showNewBadge = product.tags?.includes("new");
 
   return (
@@ -254,9 +248,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         {/* Category/Brand */}
         <div className="text-xs text-black uppercase">
           <strong>
-            {product.categoryId?.name ||
-              product.category?.name ||
-              "Uncategorized"}
+            {product.categoryId?.name || "Uncategorized"}
           </strong>
         </div>
 

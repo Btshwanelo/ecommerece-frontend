@@ -32,12 +32,12 @@ export async function POST(request: NextRequest) {
         orderId,
         paymentMethod,
         paymentStatus: orderStatus,
-        payfastData,
+        payfastData: payfastData as Record<string, string>,
       });
 
       if (updateResponse.success) {
         console.log('Order updated successfully:', orderId, orderStatus);
-        return NextResponse.text('OK');
+        return new Response('OK', { status: 200 });
       } else {
         console.error('Failed to update order:', updateResponse.error);
         return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });

@@ -27,7 +27,7 @@ export default function SubcategoriesPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8080/api/v2/subcategories", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/subcategories`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -52,7 +52,7 @@ export default function SubcategoriesPage() {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8080/api/v1/categories", {
+      const response = await fetch(`${(process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v2').replace('/api/v2', '/api/v1')}/categories`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -77,8 +77,8 @@ export default function SubcategoriesPage() {
     try {
       const token = localStorage.getItem("token");
       const url = editingSubcategory 
-        ? `http://localhost:8080/api/v1/subcategories/${editingSubcategory._id}`
-        : "http://localhost:8080/api/v1/subcategories";
+        ? `${(process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v2').replace('/api/v2', '/api/v1')}/subcategories/${editingSubcategory._id}`
+        : `${(process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v2').replace('/api/v2', '/api/v1')}/subcategories`;
       
       const method = editingSubcategory ? "PUT" : "POST";
       
@@ -125,7 +125,7 @@ export default function SubcategoriesPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8080/api/v1/subcategories/${subcategoryId}`,
+        `${(process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v2').replace('/api/v2', '/api/v1')}/subcategories/${subcategoryId}`,
         {
           method: "DELETE",
           headers: {

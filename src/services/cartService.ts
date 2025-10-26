@@ -45,7 +45,7 @@ class CartService {
   // Update cart item quantity
   async updateCartItem(itemId: string, quantity: number): Promise<CartResponse> {
     try {
-      const response = await api.put(endpoints.cart.update, {
+      const response = await api.put(endpoints.cart.updateItem(itemId), {
         itemId,
         quantity,
       });
@@ -59,9 +59,7 @@ class CartService {
   // Remove item from cart
   async removeFromCart(itemId: string): Promise<CartResponse> {
     try {
-      const response = await api.delete(endpoints.cart.remove, {
-        data: { itemId },
-      });
+      const response = await api.delete(endpoints.cart.removeItem(itemId));
       return response.data;
     } catch (error) {
       console.error('Error removing from cart:', error);

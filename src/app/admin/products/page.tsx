@@ -49,7 +49,7 @@ export default function ProductsPage() {
       }
       
       // Also try adding an admin flag if the API supports it
-      currentFilters.includeDrafts = true;
+      (currentFilters as any).includeDrafts = true;
       
       console.log("Current filters being sent:", currentFilters);
       console.log("Status filter:", currentFilters.status);

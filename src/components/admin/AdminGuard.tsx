@@ -20,10 +20,6 @@ export default function AdminGuard({ children }: AdminGuardProps) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
   const checkAuth = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -34,7 +30,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
       }
 
       // Verify token and get user info
-      const response = await fetch("http://localhost:8080/api/v2/users/profile", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -67,6 +63,10 @@ export default function AdminGuard({ children }: AdminGuardProps) {
       setLoading(false);
     }
   }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   if (loading) {
     return (

@@ -7,6 +7,7 @@ export { default as OrderService } from './orderService';
 export { default as CartService } from './cartService';
 export { default as DeliveryService } from './deliveryService';
 export { StatsService } from './statsService';
+export type { DashboardStats } from './statsService';
 
 // Re-export types for convenience
 export type {
@@ -38,7 +39,6 @@ export type {
 } from './userService';
 
 export type {
-  OrderFilters,
   CheckoutInitiateData,
   CheckoutCompleteData
 } from './orderService';

@@ -12,7 +12,7 @@ export default function TopProducts() {
     const fetchTopProducts = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:8080/api/v2/products?limit=5&sort=-views", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/products?limit=5&sort=-views`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -75,7 +75,7 @@ export default function TopProducts() {
                   {product.name}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {formatCurrency(product?.price)}
+                  {formatCurrency(product?.pricing?.basePrice)}
                 </p>
               </div>
               <div className="flex-shrink-0">

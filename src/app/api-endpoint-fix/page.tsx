@@ -35,7 +35,7 @@ static async updateOrderStatus(
 ): Promise<V2ApiResponse<Order>> {
   // Create v1 API instance with correct base URL
   const v1Api = axios.create({
-    baseURL: "http://localhost:8080/api/v1", // ✅ Correct v1 base URL
+    baseURL: \`\${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api/v2', '/api/v1')}\`, // ✅ Correct v1 base URL
     headers: { "Content-Type": "application/json" },
     withCredentials: false,
   });
@@ -61,11 +61,11 @@ static async updateOrderStatus(
 🧪 TESTING RESULTS:
 
 ✅ V2 API (Working):
-curl "http://localhost:8080/api/v2/products?limit=1"
+curl "\${process.env.NEXT_PUBLIC_API_BASE_URL}/products?limit=1"
 Response: {"success":true,"products":[...]}
 
 ✅ V1 API (Working):
-curl "http://localhost:8080/api/v1/orders"
+curl "\${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api/v2', '/api/v1')}/orders"
 Response: {"success":false,"error":"Not authorized to access this route"}
 
 ❌ Incorrect API (Not Working):
@@ -153,7 +153,7 @@ Content-Type: application/json
 === FILES UPDATED ===
 
 ✅ /frontend/src/services/v2/orderService.ts:
-- Updated baseURL to "http://localhost:8080/api/v1"
+- Updated baseURL to \`\${process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api/v2', '/api/v1')}\`
 - Correct endpoint: /orders/:id/status
 - Proper authentication handling
 
@@ -227,7 +227,7 @@ The status update should now work without the "Cannot PUT" error.`);
           <li>Go to <code>/admin/orders</code> in the frontend</li>
           <li>Click the green checkmark icon on any order</li>
           <li>Change the status and add a reason</li>
-          <li>Click "Update Status" to test the API call</li>
+          <li>Click &quot;Update Status&quot; to test the API call</li>
           <li>Check network tab for successful PUT request to /api/v1/orders/:id/status</li>
         </ol>
       </div>

@@ -28,7 +28,7 @@ export default function FitsPage() {
       console.log("Fits API Response:", response); // Debug log
       if (response.success) {
         // Handle different response structures
-        let fitsData: any[] = [];
+        let fitsData: Fit[] = [];
         
         if (response.data && Array.isArray(response.data)) {
           // Paginated response with data array
@@ -46,7 +46,7 @@ export default function FitsPage() {
         
         console.log("Processed Fits Data:", fitsData); // Debug log
         // Filter out any invalid fit objects
-        const validFits = fitsData.filter((fit: any) => fit && typeof fit === 'object');
+        const validFits = fitsData.filter((fit: Fit) => fit && typeof fit === 'object');
         setFits(validFits);
       }
     } catch (error) {

@@ -30,17 +30,17 @@ export default function ColorsPage() {
       console.log("Colors API Response:", response); // Debug log
       if (response.success) {
         // Handle different response structures
-        let colorsData = [];
+        let colorsData: Color[] = [];
         
         if (response.data && Array.isArray(response.data)) {
           // Paginated response with data array
           colorsData = response.data;
-        } else if (response.colors && Array.isArray(response.colors)) {
+        } else if ((response as any).colors && Array.isArray((response as any).colors)) {
           // Response with colors array
-          colorsData = response.colors;
-        } else if (response.color && typeof response.color === 'object') {
+          colorsData = (response as any).colors;
+        } else if ((response as any).color && typeof (response as any).color === 'object') {
           // Single color response (like after creation)
-          colorsData = [response.color];
+          colorsData = [(response as any).color];
         } else if (Array.isArray(response)) {
           // Direct array response
           colorsData = response;
@@ -66,7 +66,7 @@ export default function ColorsPage() {
         console.log("Update response:", response); // Debug log
         if (response.success) {
           // Handle different response structures
-          const updatedColor = response.data || response.color;
+          const updatedColor = response.data || (response as any).color;
           if (updatedColor) {
             setColors(colors.map(c => c._id === editingColor._id ? updatedColor : c));
           }
@@ -76,7 +76,7 @@ export default function ColorsPage() {
         console.log("Create response:", response); // Debug log
         if (response.success) {
           // Handle different response structures
-          const newColor = response.data || response.color;
+          const newColor = response.data || (response as any).color;
           if (newColor) {
             setColors([...colors, newColor]);
           }

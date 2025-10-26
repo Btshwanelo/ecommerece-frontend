@@ -7,7 +7,7 @@ import {
   UsersIcon, 
   CurrencyDollarIcon 
 } from "@heroicons/react/24/outline";
-import { StatsService, DashboardStats } from "@/services/v2";
+import { StatsService, type DashboardStats } from "@/services/v2";
 import { formatCurrency } from "@/lib/storeConfig";
 
 export default function DashboardStats() {

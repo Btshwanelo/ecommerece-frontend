@@ -441,11 +441,11 @@ export default function ProductDetailsPage() {
   // Get stock information
   const stockQuantity = selectedVariant
     ? selectedVariant.inventory?.stockQuantity || 0
-    : product.inventory?.stockQuantity || product.inventory?.quantity || 0;
+    : product.inventory?.stockQuantity || 0;
 
   const allowBackorders = selectedVariant
-    ? selectedVariant.inventory?.allowBackorders || false
-    : product.inventory?.allowBackorders || false;
+    ? selectedVariant.inventory?.stockStatus === 'backorder'
+    : product.inventory?.stockStatus === 'backorder';
 
   return (
     <Layout>

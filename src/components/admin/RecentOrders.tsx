@@ -13,7 +13,7 @@ export default function RecentOrders() {
     const fetchRecentOrders = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:8080/api/v2/orders?limit=5", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/orders?limit=5`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -97,7 +97,7 @@ export default function RecentOrders() {
                   {order.status}
                 </span>
                 <span className="text-sm font-medium text-gray-900">
-                  {formatCurrency(order?.total)}
+                  {formatCurrency(order?.totals?.total)}
                 </span>
               </div>
             </div>

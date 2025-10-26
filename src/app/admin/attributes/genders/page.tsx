@@ -28,7 +28,7 @@ export default function GendersPage() {
       console.log("Genders API Response:", response); // Debug log
       if (response.success) {
         // Handle different response structures
-        let gendersData: any[] = [];
+        let gendersData: Gender[] = [];
         
         if (response.data && Array.isArray(response.data)) {
           // Paginated response with data array
@@ -46,7 +46,7 @@ export default function GendersPage() {
         
         console.log("Processed Genders Data:", gendersData); // Debug log
         // Filter out any invalid gender objects
-        const validGenders = gendersData.filter((gender: any) => gender && typeof gender === 'object');
+        const validGenders = gendersData.filter((gender: Gender) => gender && typeof gender === 'object');
         setGenders(validGenders);
       }
     } catch (error) {

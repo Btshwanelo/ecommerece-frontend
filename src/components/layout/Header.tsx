@@ -131,7 +131,7 @@ const Header = () => {
       setCartLoading(true);
       const response = await CartService.getCart();
       if (response.success) {
-        setCart(response.cart || response.data || null);
+        setCart((response as any).cart || response.data || null);
       }
     } catch (error) {
       console.error("Error fetching cart:", error);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -10,7 +10,7 @@ import { OrderService, CartService } from "@/services/v2";
 import { PayfastService } from "@/services/v2/payfastService";
 import { formatCurrency } from "@/lib/storeConfig";
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
@@ -192,5 +192,22 @@ export default function PaymentSuccessPage() {
         </div>
       </motion.div>
     </Layout>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <Layout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <p>Loading...</p>
+          </div>
+        </div>
+      </Layout>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

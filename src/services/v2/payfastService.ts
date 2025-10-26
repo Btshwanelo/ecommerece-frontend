@@ -323,7 +323,7 @@ export class PayfastService {
       // Direct query string creation - no filtering
       const queryString = Object.keys(exactData)
         .sort()
-        .map((key) => `${key}=${encodeURIComponent(exactData[key])}`)
+        .map((key) => `${key}=${encodeURIComponent(exactData[key as keyof typeof exactData])}`)
         .join("&");
 
       console.log('Direct test - Query string:', queryString);
@@ -333,10 +333,9 @@ export class PayfastService {
       console.log('Direct test - Target signature:', "a21a30c5faabecfa9cbbab6bf3cabc20");
       console.log('Direct test - Match:', signature === "a21a30c5faabecfa9cbbab6bf3cabc20");
 
-      return { 
+      return {
         success: true, 
         signature,
-        match: signature === "a21a30c5faabecfa9cbbab6bf3cabc20"
       };
     } catch (error: any) {
       return { success: false, error: error.message };

@@ -107,7 +107,7 @@ export default function ProductsPage() {
       console.log("Categories API response:", response);
 
       if (response.success) {
-        const categoriesData = response.categories || response.data || [];
+        const categoriesData = (response as any).categories || response.data || [];
         setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } else {
         console.error("Failed to fetch categories:", response.error);

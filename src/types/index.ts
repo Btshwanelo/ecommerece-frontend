@@ -130,6 +130,11 @@ export interface Category {
   updatedAt: string;
 }
 
+export interface Subcategory extends Category {
+  parentCategory: string | Category;
+  category: Category;
+}
+
 // Attribute types
 export interface Attribute {
   _id: string;

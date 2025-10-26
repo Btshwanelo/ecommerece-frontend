@@ -245,7 +245,7 @@ export default function CategoryProductsPage() {
       console.log("Category API response:", response);
 
       if (response.success) {
-        setCategory(response.category || response.data);
+        setCategory(response.category || response.data || null);
       } else {
         console.error("Failed to fetch category:", response.error);
       }
@@ -284,25 +284,25 @@ export default function CategoryProductsPage() {
       ]);
 
       if (colorsRes.success)
-        setColors(colorsRes.colors || colorsRes.data || []);
-      if (sizesRes.success) setSizes(sizesRes.sizes || sizesRes.data || []);
+        setColors((colorsRes as any).colors || colorsRes.data || []);
+      if (sizesRes.success) setSizes((sizesRes as any).sizes || sizesRes.data || []);
       if (materialsRes.success)
-        setMaterials(materialsRes.materials || materialsRes.data || []);
+        setMaterials((materialsRes as any).materials || materialsRes.data || []);
       if (gendersRes.success)
-        setGenders(gendersRes.genders || gendersRes.data || []);
+        setGenders((gendersRes as any).genders || gendersRes.data || []);
       if (seasonsRes.success)
-        setSeasons(seasonsRes.seasons || seasonsRes.data || []);
+        setSeasons((seasonsRes as any).seasons || seasonsRes.data || []);
       if (stylesRes.success)
-        setStyles(stylesRes.styles || stylesRes.data || []);
+        setStyles((stylesRes as any).styles || stylesRes.data || []);
       if (patternsRes.success)
-        setPatterns(patternsRes.patterns || patternsRes.data || []);
+        setPatterns((patternsRes as any).patterns || patternsRes.data || []);
       if (shoeHeightsRes.success)
-        setShoeHeights(shoeHeightsRes.shoeHeights || shoeHeightsRes.data || []);
-      if (fitsRes.success) setFits(fitsRes.fits || fitsRes.data || []);
+        setShoeHeights((shoeHeightsRes as any).shoeHeights || shoeHeightsRes.data || []);
+      if (fitsRes.success) setFits((fitsRes as any).fits || fitsRes.data || []);
       if (occasionsRes.success)
-        setOccasions(occasionsRes.occasions || occasionsRes.data || []);
+        setOccasions((occasionsRes as any).occasions || occasionsRes.data || []);
       if (collarTypesRes.success)
-        setCollarTypes(collarTypesRes.collarTypes || collarTypesRes.data || []);
+        setCollarTypes((collarTypesRes as any).collarTypes || collarTypesRes.data || []);
     } catch (err) {
       console.error("Error fetching attributes:", err);
     }
