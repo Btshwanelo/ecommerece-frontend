@@ -5,25 +5,12 @@ import { useRouter } from "next/navigation";
 import { 
   Category, 
   Brand, 
-  Product, 
-  ProductVariant,
-  Color,
-  Size,
-  Material,
-  Gender,
-  Season,
-  Style,
-  Pattern,
-  ShoeHeight,
-  Fit,
-  Occasion,
-  CollarType
+  Product
 } from "@/types";
 import { 
   CategoryService, 
   BrandService, 
-  ProductService,
-  AttributeService 
+  ProductService
 } from "@/services/v2";
 import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
@@ -32,42 +19,24 @@ export default function NewProductPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [colors, setColors] = useState<Color[]>([]);
-  const [sizes, setSizes] = useState<Size[]>([]);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [genders, setGenders] = useState<Gender[]>([]);
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [styles, setStyles] = useState<Style[]>([]);
-  const [patterns, setPatterns] = useState<Pattern[]>([]);
-  const [shoeHeights, setShoeHeights] = useState<ShoeHeight[]>([]);
-  const [fits, setFits] = useState<Fit[]>([]);
-  const [occasions, setOccasions] = useState<Occasion[]>([]);
-  const [collarTypes, setCollarTypes] = useState<CollarType[]>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [variants, setVariants] = useState<any[]>([]);
+  // V3 supports sizes array on the product itself
+  const [productSizes, setProductSizes] = useState<Array<{name: string; stockQuantity: number; stockStatus: string}>>([]);
+  // V3 product form data - only fields supported by v3
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     description: "",
     shortDescription: "",
     sku: "",
-    productType: "simple" as "simple" | "variable" | "grouped" | "virtual" | "downloadable",
     categoryId: "",
     brandId: "",
-    genderId: "",
-    seasonId: "",
-    styleId: "",
-    materialIds: [] as string[],
-    patternId: "",
-    shoeHeightId: "",
-    fitId: "",
-    occasionIds: [] as string[],
-    collarTypeId: "",
+    gender: "" as "" | "male" | "female" | "unisex", // V3 uses enum, not ID
     pricing: {
       basePrice: "",
       salePrice: "",
       costPrice: "",
-      currency: "USD"
+      currency: "R" // V3 defaults to "R"
     },
     inventory: {
       trackInventory: true,
@@ -90,39 +59,14 @@ export default function NewProductPage() {
     },
     status: "draft" as "draft" | "published" | "archived",
     visibility: "public" as "public" | "private" | "hidden",
-    tags: [] as string[],
   });
 
+  // Fetch only v3-supported data (categories and brands)
   const fetchAllData = async () => {
     try {
-      const [
-        categoriesRes,
-        brandsRes,
-        colorsRes,
-        sizesRes,
-        materialsRes,
-        gendersRes,
-        seasonsRes,
-        stylesRes,
-        patternsRes,
-        shoeHeightsRes,
-        fitsRes,
-        occasionsRes,
-        collarTypesRes
-      ] = await Promise.all([
+      const [categoriesRes, brandsRes] = await Promise.all([
         CategoryService.getCategories({ limit: 100 }),
         BrandService.getBrands({ limit: 100 }),
-        AttributeService.getColors({ limit: 100 }),
-        AttributeService.getSizes({ limit: 100 }),
-        AttributeService.getMaterials({ limit: 100 }),
-        AttributeService.getGenders({ limit: 100 }),
-        AttributeService.getSeasons({ limit: 100 }),
-        AttributeService.getStyles({ limit: 100 }),
-        AttributeService.getPatterns({ limit: 100 }),
-        AttributeService.getShoeHeights({ limit: 100 }),
-        AttributeService.getFits({ limit: 100 }),
-        AttributeService.getOccasions({ limit: 100 }),
-        AttributeService.getCollarTypes({ limit: 100 })
       ]);
 
       // Handle different response structures
@@ -139,17 +83,6 @@ export default function NewProductPage() {
 
       setCategories(extractData(categoriesRes, 'categories'));
       setBrands(extractData(brandsRes, 'brands'));
-      setColors(extractData(colorsRes, 'colors'));
-      setSizes(extractData(sizesRes, 'sizes'));
-      setMaterials(extractData(materialsRes, 'materials'));
-      setGenders(extractData(gendersRes, 'genders'));
-      setSeasons(extractData(seasonsRes, 'seasons'));
-      setStyles(extractData(stylesRes, 'styles'));
-      setPatterns(extractData(patternsRes, 'patterns'));
-      setShoeHeights(extractData(shoeHeightsRes, 'shoeHeights'));
-      setFits(extractData(fitsRes, 'fits'));
-      setOccasions(extractData(occasionsRes, 'occasions'));
-      setCollarTypes(extractData(collarTypesRes, 'collarTypes'));
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -165,62 +98,19 @@ export default function NewProductPage() {
     }
   };
 
-  const addVariant = () => {
-    const newVariant = {
-      sku: "",
-      colorId: undefined,
-      sizeId: undefined,
-      genderId: undefined,
-      pricing: {
-        basePrice: parseFloat(formData.pricing.basePrice) || 0,
-        salePrice: formData.pricing.salePrice ? parseFloat(formData.pricing.salePrice) : undefined,
-        costPrice: formData.pricing.costPrice ? parseFloat(formData.pricing.costPrice) : undefined,
-        currency: formData.pricing.currency
-      },
-      inventory: {
-        stockQuantity: parseInt(formData.inventory.stockQuantity) || 0,
-        stockStatus: formData.inventory.stockStatus
-      },
-      images: [],
-      isActive: true
-    };
-    setVariants([...variants, newVariant]);
+  // V3 supports sizes array on the product itself
+  const addSize = () => {
+    setProductSizes([...productSizes, { name: "", stockQuantity: 0, stockStatus: "in_stock" }]);
   };
 
-  const removeVariant = (index: number) => {
-    setVariants(variants.filter((_, i) => i !== index));
+  const removeSize = (index: number) => {
+    setProductSizes(productSizes.filter((_, i) => i !== index));
   };
 
-  const updateVariant = (index: number, field: string, value: any) => {
-    const updatedVariants = [...variants];
-    updatedVariants[index] = { ...updatedVariants[index], [field]: value };
-    setVariants(updatedVariants);
-  };
-
-  const updateVariantPricing = (index: number, field: string, value: any) => {
-    const updatedVariants = [...variants];
-    updatedVariants[index].pricing = { ...updatedVariants[index].pricing, [field]: value };
-    setVariants(updatedVariants);
-  };
-
-  const updateVariantInventory = (index: number, field: string, value: any) => {
-    const updatedVariants = [...variants];
-    updatedVariants[index].inventory = { ...updatedVariants[index].inventory, [field]: value };
-    setVariants(updatedVariants);
-  };
-
-  const handleVariantImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const updatedVariants = [...variants];
-      updatedVariants[index].images = Array.from(e.target.files);
-      setVariants(updatedVariants);
-    }
-  };
-
-  const removeVariantImage = (variantIndex: number, imageIndex: number) => {
-    const updatedVariants = [...variants];
-    updatedVariants[variantIndex].images = updatedVariants[variantIndex].images.filter((_: File, i: number) => i !== imageIndex);
-    setVariants(updatedVariants);
+  const updateSize = (index: number, field: string, value: any) => {
+    const updatedSizes = [...productSizes];
+    updatedSizes[index] = { ...updatedSizes[index], [field]: value };
+    setProductSizes(updatedSizes);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -228,25 +118,21 @@ export default function NewProductPage() {
     setLoading(true);
 
     try {
-      // Prepare product data based on product type
+      // Prepare product data - only v3-supported fields
       const productData = {
         name: formData.name,
         slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
         description: formData.description,
         shortDescription: formData.shortDescription,
         sku: formData.sku,
-        productType: formData.productType,
         categoryId: formData.categoryId,
         brandId: formData.brandId || undefined,
-        genderId: formData.genderId || undefined,
-        seasonId: formData.seasonId || undefined,
-        styleId: formData.styleId || undefined,
-        materialIds: formData.materialIds,
-        patternId: formData.patternId || undefined,
-        shoeHeightId: formData.shoeHeightId || undefined,
-        fitId: formData.fitId || undefined,
-        occasionIds: formData.occasionIds,
-        collarTypeId: formData.collarTypeId || undefined,
+        gender: formData.gender || undefined, // V3 uses enum string, not ID
+        sizes: productSizes.length > 0 ? productSizes.map(size => ({
+          name: size.name,
+          stockQuantity: size.stockQuantity || 0,
+          stockStatus: size.stockStatus || "in_stock"
+        })) : undefined,
         pricing: {
           basePrice: parseFloat(formData.pricing.basePrice),
           salePrice: formData.pricing.salePrice ? parseFloat(formData.pricing.salePrice) : undefined,
@@ -274,17 +160,12 @@ export default function NewProductPage() {
         } : undefined,
         status: formData.status,
         visibility: formData.visibility,
-        tags: formData.tags,
-        images: [], // Will be handled separately
-        views: 0,
-        salesCount: 0,
-        rating: { average: 0, count: 0 }
       };
 
       // Create FormData for file upload
       const formDataToSend = new FormData();
       
-      // Add basic fields
+      // Add basic fields - only v3-supported fields
       formDataToSend.append('name', productData.name);
       formDataToSend.append('slug', productData.slug);
       formDataToSend.append('description', productData.description);
@@ -292,43 +173,21 @@ export default function NewProductPage() {
         formDataToSend.append('shortDescription', productData.shortDescription);
       }
       formDataToSend.append('sku', productData.sku);
-      formDataToSend.append('productType', productData.productType);
       formDataToSend.append('categoryId', productData.categoryId);
       
       if (productData.brandId) {
         formDataToSend.append('brandId', productData.brandId);
       }
-      if (productData.genderId) {
-        formDataToSend.append('genderId', productData.genderId);
-      }
-      if (productData.seasonId) {
-        formDataToSend.append('seasonId', productData.seasonId);
-      }
-      if (productData.styleId) {
-        formDataToSend.append('styleId', productData.styleId);
-      }
-      if (productData.patternId) {
-        formDataToSend.append('patternId', productData.patternId);
-      }
-      if (productData.shoeHeightId) {
-        formDataToSend.append('shoeHeightId', productData.shoeHeightId);
-      }
-      if (productData.fitId) {
-        formDataToSend.append('fitId', productData.fitId);
-      }
-      if (productData.collarTypeId) {
-        formDataToSend.append('collarTypeId', productData.collarTypeId);
+      if (productData.gender) {
+        formDataToSend.append('gender', productData.gender); // V3 uses enum string, not ID
       }
       
-      // Add arrays - only if they have values
-      if (productData.materialIds && productData.materialIds.length > 0) {
-        productData.materialIds.forEach(materialId => {
-          formDataToSend.append('materialIds[]', materialId);
-        });
-      }
-      if (productData.occasionIds && productData.occasionIds.length > 0) {
-        productData.occasionIds.forEach(occasionId => {
-          formDataToSend.append('occasionIds[]', occasionId);
+      // Add sizes array if provided
+      if (productData.sizes && productData.sizes.length > 0) {
+        productData.sizes.forEach((size, index) => {
+          formDataToSend.append(`sizes[${index}][name]`, size.name);
+          formDataToSend.append(`sizes[${index}][stockQuantity]`, size.stockQuantity.toString());
+          formDataToSend.append(`sizes[${index}][stockStatus]`, size.stockStatus);
         });
       }
       
@@ -372,13 +231,6 @@ export default function NewProductPage() {
       // Add status and visibility
       formDataToSend.append('status', productData.status);
       formDataToSend.append('visibility', productData.visibility);
-      
-      // Add tags if provided
-      if (productData.tags && productData.tags.length > 0) {
-        productData.tags.forEach(tag => {
-          formDataToSend.append('tags[]', tag);
-        });
-      }
 
       // Add images
       selectedImages.forEach((image, index) => {
@@ -392,18 +244,21 @@ export default function NewProductPage() {
         console.log(`${key}:`, value);
       }
 
-      // Create product using v2 service with FormData
+      // Create product using v3 API (ProductService.createProductWithImages uses endpoints.products.create which points to /api/v3/products)
       const response = await ProductService.createProductWithImages(formDataToSend);
       console.log("Product creation response:", response);
       console.log("Response success:", response.success);
       console.log("Response data:", response.data);
       console.log("Response product:", response.product);
 
-      if (response.success || (response as any)._id) {
+      // V3 API returns { success: true, product } in response.data
+      // ProductService returns V2ApiResponse<Product> which is response.data from axios
+      const responseData = response as any;
+      if (responseData.success || responseData.product || responseData._id) {
         console.log("Product created successfully:", response);
         
-        // Get the created product ID - handle different response structures
-        const createdProduct = response.data || response.product || (response as any);
+        // Get the created product - V3 returns { success: true, product } in response.data
+        const createdProduct = responseData.product || responseData.data?.product || responseData;
         if (!createdProduct || !createdProduct._id) {
           console.error("No product data returned from creation");
           console.error("Response structure:", response);
@@ -413,72 +268,7 @@ export default function NewProductPage() {
         }
         const productId = createdProduct._id;
         
-        // Create variants separately if product type is variable
-        if (formData.productType === 'variable' && variants.length > 0) {
-          console.log("Creating variants for product:", productId);
-          console.log("Variants to create:", variants);
-          
-          try {
-            // Create each variant separately
-            for (const variant of variants) {
-              const variantFormData = new FormData();
-              
-              // Add variant fields
-              variantFormData.append('sku', variant.sku || '');
-              
-              // Handle attribute IDs (they might be objects or strings)
-              if (variant.colorId) {
-                const colorId = typeof variant.colorId === 'string' ? variant.colorId : variant.colorId._id;
-                if (colorId) variantFormData.append('colorId', colorId);
-              }
-              if (variant.sizeId) {
-                const sizeId = typeof variant.sizeId === 'string' ? variant.sizeId : variant.sizeId._id;
-                if (sizeId) variantFormData.append('sizeId', sizeId);
-              }
-              if (variant.genderId) {
-                const genderId = typeof variant.genderId === 'string' ? variant.genderId : variant.genderId._id;
-                if (genderId) variantFormData.append('genderId', genderId);
-              }
-              
-              // Add pricing
-              if (variant.pricing) {
-                variantFormData.append('pricing[basePrice]', variant.pricing.basePrice?.toString() || '0');
-                if (variant.pricing.salePrice) {
-                  variantFormData.append('pricing[salePrice]', variant.pricing.salePrice.toString());
-                }
-                if (variant.pricing.costPrice) {
-                  variantFormData.append('pricing[costPrice]', variant.pricing.costPrice.toString());
-                }
-                variantFormData.append('pricing[currency]', variant.pricing.currency || 'USD');
-              }
-              
-              // Add inventory
-              if (variant.inventory) {
-                variantFormData.append('inventory[stockQuantity]', variant.inventory.stockQuantity?.toString() || '0');
-                variantFormData.append('inventory[stockStatus]', variant.inventory.stockStatus || 'in_stock');
-              }
-              
-              // Add variant images if any
-              if (variant.images && variant.images.length > 0) {
-                variant.images.forEach((image: File) => {
-                  variantFormData.append('images', image);
-                });
-              }
-              
-              // Create the variant
-              const variantResponse = await ProductService.createProductVariantWithImages(productId, variantFormData);
-              console.log("Variant creation response:", variantResponse);
-              
-              if (!variantResponse.success) {
-                console.error("Failed to create variant:", variantResponse.error);
-              }
-            }
-          } catch (variantError) {
-            console.error("Error creating variants:", variantError);
-            // Don't fail the entire operation if variants fail
-          }
-        }
-        
+        // V3 doesn't support variants - sizes are handled via the sizes array on the product
         router.push("/admin/products");
       } else {
         console.error("Product creation failed:", response.error);
@@ -492,22 +282,6 @@ export default function NewProductPage() {
     }
   };
 
-  const getProductTypeDescription = (type: string) => {
-    switch (type) {
-      case 'simple':
-        return 'A single product with no variations (e.g., a basic t-shirt)';
-      case 'variable':
-        return 'A product with variations like size, color, etc. (e.g., t-shirt in different sizes and colors)';
-      case 'grouped':
-        return 'A collection of related products sold together (e.g., a gift set)';
-      case 'virtual':
-        return 'A digital product that doesn\'t require shipping (e.g., software, e-book)';
-      case 'downloadable':
-        return 'A product that can be downloaded (e.g., music, software, documents)';
-      default:
-        return '';
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -563,24 +337,6 @@ export default function NewProductPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Product Type *
-                  </label>
-                  <select
-                    required
-                    value={formData.productType}
-                    onChange={(e) => setFormData({ ...formData, productType: e.target.value as any })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="simple">Simple</option>
-                    <option value="variable">Variable</option>
-                    <option value="grouped">Grouped</option>
-                    <option value="virtual">Virtual</option>
-                    <option value="downloadable">Downloadable</option>
-                  </select>
-                  <p className="mt-1 text-sm text-gray-500">{getProductTypeDescription(formData.productType)}</p>
-                </div>
               </div>
 
               <div className="mt-6">
@@ -654,180 +410,91 @@ export default function NewProductPage() {
               </div>
             </div>
 
-            {/* Product Attributes */}
+            {/* Product Attributes - V3 only supports gender as enum */}
             <div className="border-b border-gray-200 pb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Product Attributes</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Gender
                   </label>
                   <select
-                    value={formData.genderId}
-                    onChange={(e) => setFormData({ ...formData, genderId: e.target.value })}
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   >
                     <option value="">Select gender</option>
-                    {genders.map((gender) => (
-                      <option key={gender._id} value={gender._id}>
-                        {gender.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Season
-                  </label>
-                  <select
-                    value={formData.seasonId}
-                    onChange={(e) => setFormData({ ...formData, seasonId: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="">Select season</option>
-                    {seasons.map((season) => (
-                      <option key={season._id} value={season._id}>
-                        {season.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Style
-                  </label>
-                  <select
-                    value={formData.styleId}
-                    onChange={(e) => setFormData({ ...formData, styleId: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="">Select style</option>
-                    {styles.map((style) => (
-                      <option key={style._id} value={style._id}>
-                        {style.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Pattern
-                  </label>
-                  <select
-                    value={formData.patternId}
-                    onChange={(e) => setFormData({ ...formData, patternId: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="">Select pattern</option>
-                    {patterns.map((pattern) => (
-                      <option key={pattern._id} value={pattern._id}>
-                        {pattern.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Shoe Height
-                  </label>
-                  <select
-                    value={formData.shoeHeightId}
-                    onChange={(e) => setFormData({ ...formData, shoeHeightId: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="">Select shoe height</option>
-                    {shoeHeights.map((height) => (
-                      <option key={height._id} value={height._id}>
-                        {height.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Fit
-                  </label>
-                  <select
-                    value={formData.fitId}
-                    onChange={(e) => setFormData({ ...formData, fitId: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="">Select fit</option>
-                    {fits.map((fit) => (
-                      <option key={fit._id} value={fit._id}>
-                        {fit.name}
-                      </option>
-                    ))}
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="unisex">Unisex</option>
                   </select>
                 </div>
               </div>
+            </div>
 
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700">
-                  Materials
-                </label>
-                <div className="mt-2 space-y-2">
-                  {materials.map((material) => (
-                    <label key={material._id} className="flex items-center">
+            {/* Product Sizes - V3 supports sizes array */}
+            <div className="border-b border-gray-200 pb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Product Sizes</h3>
+                <button
+                  type="button"
+                  onClick={addSize}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <PlusIcon className="h-4 w-4 mr-1" />
+                  Add Size
+                </button>
+              </div>
+
+              {productSizes.map((size, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-md font-medium text-gray-900">Size {index + 1}</h4>
+                    <button
+                      type="button"
+                      onClick={() => removeSize(index)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Size Name</label>
                       <input
-                        type="checkbox"
-                        checked={formData.materialIds.includes(material._id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({
-                              ...formData,
-                              materialIds: [...formData.materialIds, material._id]
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              materialIds: formData.materialIds.filter(id => id !== material._id)
-                            });
-                          }
-                        }}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        type="text"
+                        value={size.name}
+                        onChange={(e) => updateSize(index, 'name', e.target.value)}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="e.g., S, M, L, XL"
                       />
-                      <span className="ml-2 text-sm text-gray-700">{material.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700">
-                  Occasions
-                </label>
-                <div className="mt-2 space-y-2">
-                  {occasions.map((occasion) => (
-                    <label key={occasion._id} className="flex items-center">
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Stock Quantity</label>
                       <input
-                        type="checkbox"
-                        checked={formData.occasionIds.includes(occasion._id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({
-                              ...formData,
-                              occasionIds: [...formData.occasionIds, occasion._id]
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              occasionIds: formData.occasionIds.filter(id => id !== occasion._id)
-                            });
-                          }
-                        }}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        type="number"
+                        value={size.stockQuantity}
+                        onChange={(e) => updateSize(index, 'stockQuantity', parseInt(e.target.value) || 0)}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="0"
                       />
-                      <span className="ml-2 text-sm text-gray-700">{occasion.name}</span>
-                    </label>
-                  ))}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Stock Status</label>
+                      <select
+                        value={size.stockStatus}
+                        onChange={(e) => updateSize(index, 'stockStatus', e.target.value)}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      >
+                        <option value="in_stock">In Stock</option>
+                        <option value="out_of_stock">Out of Stock</option>
+                        <option value="backorder">Backorder</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
 
             {/* Pricing */}
@@ -956,141 +623,6 @@ export default function NewProductPage() {
               </div>
             </div>
 
-            {/* Product Variants (for variable products) */}
-            {formData.productType === 'variable' && (
-              <div className="border-b border-gray-200 pb-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Product Variants</h3>
-                  <button
-                    type="button"
-                    onClick={addVariant}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-1" />
-                    Add Variant
-                  </button>
-                </div>
-
-                {variants.map((variant, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-md font-medium text-gray-900">Variant {index + 1}</h4>
-                      <button
-                        type="button"
-                        onClick={() => removeVariant(index)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">SKU</label>
-                        <input
-                          type="text"
-                          value={variant.sku || ''}
-                          onChange={(e) => updateVariant(index, 'sku', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          placeholder="Variant SKU"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Color</label>
-                        <select
-                          value={typeof variant.colorId === 'string' ? variant.colorId : variant.colorId?._id || ''}
-                          onChange={(e) => updateVariant(index, 'colorId', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                          <option value="">Select color</option>
-                          {colors.map((color) => (
-                            <option key={color._id} value={color._id}>
-                              {color.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Size</label>
-                        <select
-                          value={typeof variant.sizeId === 'string' ? variant.sizeId : variant.sizeId?._id || ''}
-                          onChange={(e) => updateVariant(index, 'sizeId', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                          <option value="">Select size</option>
-                          {sizes.map((size) => (
-                            <option key={size._id} value={size._id}>
-                              {size.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={variant.pricing?.basePrice || ''}
-                          onChange={(e) => updateVariantPricing(index, 'basePrice', parseFloat(e.target.value))}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Stock Quantity</label>
-                        <input
-                          type="number"
-                          value={variant.inventory?.stockQuantity || ''}
-                          onChange={(e) => updateVariantInventory(index, 'stockQuantity', parseInt(e.target.value))}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Variant Images */}
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Variant Images
-                      </label>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={(e) => handleVariantImageChange(index, e)}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                      />
-                      {variant.images && variant.images.length > 0 && (
-                        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                          {variant.images.map((image: File, imageIndex: number) => (
-                            <div key={imageIndex} className="relative">
-                              <img
-                                src={URL.createObjectURL(image)}
-                                alt={`Variant ${index + 1} Preview ${imageIndex + 1}`}
-                                className="w-full h-24 object-cover rounded-lg border border-gray-300"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeVariantImage(index, imageIndex)}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                              >
-                                <XMarkIcon className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* Images */}
             <div className="border-b border-gray-200 pb-6">

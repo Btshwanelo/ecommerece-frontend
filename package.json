@@ -20,6 +20,7 @@
     "@hookform/resolvers": "^5.2.1",
     "@types/crypto-js": "^4.2.2",
     "axios": "^1.11.0",
+    "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",
@@ -28,6 +29,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.62.0",
+    "tailwind-merge": "^3.3.1",
     "zod": "^4.1.5"
   },
   "devDependencies": {
