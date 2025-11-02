@@ -50,7 +50,7 @@ export class ProductService {
         }
       });
 
-      const url = `/products/category/slug/${categorySlug}?${params.toString()}`;
+      const url = `${endpoints.products.byCategorySlug(categorySlug)}?${params.toString()}`;
       console.log("Calling products by category slug API:", url);
       console.log("Filters:", filters);
       const response = await api.get(url);

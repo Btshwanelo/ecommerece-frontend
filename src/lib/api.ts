@@ -19,11 +19,29 @@ api.interceptors.request.use(
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     // Only add auth token for protected endpoints
-    const url = config.url || "";
-    const fullUrl = `${config.baseURL}${url}`;
+    let url = config.url || "";
     const method = config.method?.toLowerCase() || "get";
 
-    // Define public endpoints (read-only operations)
+    // Handle v2 endpoints: if URL starts with /api/v2, construct full URL from origin
+    // This is needed because baseURL is /api/v3, and we need to override it for v2
+    let fullUrl: string;
+    if (url.startsWith("/api/v2")) {
+      const baseURL = config.baseURL || "";
+      // Extract origin from baseURL (e.g., http://localhost:6000 from http://localhost:6000/api/v3)
+      const origin = baseURL.split("/api/")[0] || baseURL;
+      fullUrl = `${origin}${url}`;
+      // Override baseURL for this request - set to origin so axios doesn't double-concatenate
+      config.baseURL = origin;
+      // Update the URL to be relative to the new baseURL
+      config.url = url;
+    } else {
+      fullUrl = `${config.baseURL || ""}${url}`;
+    }
+
+    // Define public endpoints - auth endpoints (login/register) should be public
+    const isAuthEndpoint = url.includes("/users/login") || url.includes("/users/register");
+    
+    // Define public read-only endpoints (GET operations)
     const isPublicReadEndpoint =
       method === "get" &&
       (url.includes("/products") ||
@@ -33,10 +51,10 @@ api.interceptors.request.use(
         url.includes("/delivery/available") ||
         url.includes("/cart"));
 
-    // All write operations (POST, PUT, DELETE) require authentication
+    // All write operations (POST, PUT, DELETE) require authentication EXCEPT auth endpoints
     const isWriteOperation =
       method === "post" || method === "put" || method === "delete";
-    const isPublicEndpoint = isPublicReadEndpoint && !isWriteOperation;
+    const isPublicEndpoint = isAuthEndpoint || (isPublicReadEndpoint && !isWriteOperation);
 
     console.log("API Request:", {
       url,
@@ -75,7 +93,15 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const url = error.config?.url || "";
-    const fullUrl = `${error.config?.baseURL}${url}`;
+    // Handle v2 endpoints - calculate fullUrl correctly
+    let fullUrl: string;
+    if (url.startsWith("/api/v2")) {
+      const baseURL = error.config?.baseURL || "";
+      const origin = baseURL.split("/api/")[0] || baseURL;
+      fullUrl = `${origin}${url}`;
+    } else {
+      fullUrl = `${error.config?.baseURL || ""}${url}`;
+    }
     const method = error.config?.method?.toLowerCase() || "get";
 
     // Enhanced error logging with better context
@@ -93,7 +119,10 @@ api.interceptors.response.use(
     if (status === 401) {
       // Handle unauthorized access - only redirect for protected endpoints
       if (typeof window !== "undefined") {
-        // Define public endpoints that should never trigger login redirect
+        // Define public endpoints - auth endpoints should never redirect
+        const isAuthEndpoint = url.includes("/users/login") || url.includes("/users/register");
+        
+        // Define public read-only endpoints
         const isPublicReadEndpoint =
           method === "get" &&
           (url.includes("/products") ||
@@ -104,29 +133,58 @@ api.interceptors.response.use(
             url.includes("/cart"));
         const isWriteOperation =
           method === "post" || method === "put" || method === "delete";
-        const isPublicEndpoint = isPublicReadEndpoint && !isWriteOperation;
+        const isPublicEndpoint = isAuthEndpoint || (isPublicReadEndpoint && !isWriteOperation);
 
         // Define protected endpoints that should trigger login redirect
+        // Exclude auth endpoints from protected endpoints check
         const isProtectedEndpoint =
-          url.includes("/users") ||
-          url.includes("/orders") ||
-          url.includes("/cart") ||
-          url.includes("/admin");
+          !isAuthEndpoint &&
+          (url.includes("/users") ||
+            url.includes("/orders") ||
+            url.includes("/cart") ||
+            url.includes("/admin"));
 
         console.log("401 Error:", {
           url,
+          isAuthEndpoint,
           isPublicEndpoint,
           isProtectedEndpoint,
         });
 
         // Only redirect if it's a protected endpoint AND not a public endpoint
-        if (isProtectedEndpoint && !isPublicEndpoint) {
-          console.log("Redirecting to login for protected endpoint");
+        // Never redirect for auth endpoints (login/register)
+        // Don't redirect if we have a token (might be invalid but let component handle it)
+        // Don't redirect if we're already on an admin page (might be a temporary auth issue)
+        const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
+        const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+        const isOnAdminPage = currentPath.startsWith("/admin") || currentPath.startsWith("/auth/login");
+        
+        // Only redirect if:
+        // 1. It's a protected endpoint
+        // 2. Not a public endpoint
+        // 3. Not an auth endpoint
+        // 4. We don't have a token (no token means definitely not authenticated)
+        // 5. We're not already on admin/auth page
+        const shouldRedirect = isProtectedEndpoint && 
+          !isPublicEndpoint && 
+          !isAuthEndpoint && 
+          !hasToken && 
+          !isOnAdminPage;
+        
+        if (shouldRedirect) {
+          console.log("Redirecting to login for protected endpoint - no token found");
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           window.location.href = "/auth/login";
         } else {
-          console.log("Not redirecting - public endpoint or not protected");
+          console.log("Not redirecting:", {
+            isProtectedEndpoint,
+            isPublicEndpoint,
+            isAuthEndpoint,
+            hasToken,
+            isOnAdminPage,
+            currentPath
+          });
         }
       }
     } else if (status === 404) {
@@ -137,7 +195,7 @@ api.interceptors.response.use(
         method,
         error: error.response?.data?.error || "Resource not found",
       });
-      
+
       // For 404s, return a structured response instead of throwing
       // This prevents Next.js from treating it as an unhandled error
       const mockResponse = {
@@ -151,7 +209,7 @@ api.interceptors.response.use(
         headers: error.response?.headers || {},
         config: error.config,
       };
-      
+
       return Promise.resolve(mockResponse);
     } else if (status >= 500) {
       // Handle server errors
@@ -188,7 +246,9 @@ api.interceptors.response.use(
   }
 );
 
-// API endpoints
+// API endpoints - Using v3 routes for admin functionality
+// Note: baseURL already includes /api/v3, so v3 endpoints are relative paths
+// v2 endpoints use full paths to override baseURL
 export const endpoints = {
   auth: {
     login: "/users/login",
@@ -200,18 +260,25 @@ export const endpoints = {
     list: "/products",
     detail: (id: string) => `/products/${id}`,
     bySlug: (slug: string) => `/products/slug/${slug}`,
+    byCategorySlug: (categorySlug: string) =>
+      `/products/category/slug/${categorySlug}`,
     search: "/products/search",
     create: "/products",
     update: (id: string) => `/products/${id}`,
     delete: (id: string) => `/products/${id}`,
     trending: "/products/trending",
     new: "/products/new",
-    variants: (productId: string) => `/products/${productId}/variants`,
-    createVariant: (productId: string) => `/products/${productId}/variants`,
-    updateVariant: (variantId: string) => `/products/variants/${variantId}`,
-    deleteVariant: (variantId: string) => `/products/variants/${variantId}`,
+    // Variant endpoints not available in v3, using v2 (full path to override baseURL)
+    variants: (productId: string) => `/api/v2/products/${productId}/variants`,
+    createVariant: (productId: string) =>
+      `/api/v2/products/${productId}/variants`,
+    updateVariant: (variantId: string) =>
+      `/api/v2/products/variants/${variantId}`,
+    deleteVariant: (variantId: string) =>
+      `/api/v2/products/variants/${variantId}`,
+    // Category filters endpoint not available in v3, using v2 (full path to override baseURL)
     categoryFilters: (categoryId: string) =>
-      `/products/category/${categoryId}/filters`,
+      `/api/v2/products/category/${categoryId}/filters`,
   },
   categories: {
     list: "/categories",
@@ -232,104 +299,105 @@ export const endpoints = {
     delete: (id: string) => `/brands/${id}`,
   },
   attributes: {
+    // Attributes endpoints not available in v3, using v2
     colors: {
-      list: "/attributes/colors",
-      detail: (id: string) => `/attributes/colors/${id}`,
-      bySlug: (slug: string) => `/attributes/colors/slug/${slug}`,
-      create: "/attributes/colors",
-      update: (id: string) => `/attributes/colors/${id}`,
-      delete: (id: string) => `/attributes/colors/${id}`,
+      list: "/api/v2/attributes/colors",
+      detail: (id: string) => `/api/v2/attributes/colors/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/colors/slug/${slug}`,
+      create: "/api/v2/attributes/colors",
+      update: (id: string) => `/api/v2/attributes/colors/${id}`,
+      delete: (id: string) => `/api/v2/attributes/colors/${id}`,
     },
     sizes: {
-      list: "/attributes/sizes",
-      detail: (id: string) => `/attributes/sizes/${id}`,
-      bySlug: (slug: string) => `/attributes/sizes/slug/${slug}`,
-      create: "/attributes/sizes",
-      update: (id: string) => `/attributes/sizes/${id}`,
-      delete: (id: string) => `/attributes/sizes/${id}`,
+      list: "/api/v2/attributes/sizes",
+      detail: (id: string) => `/api/v2/attributes/sizes/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/sizes/slug/${slug}`,
+      create: "/api/v2/attributes/sizes",
+      update: (id: string) => `/api/v2/attributes/sizes/${id}`,
+      delete: (id: string) => `/api/v2/attributes/sizes/${id}`,
     },
     materials: {
-      list: "/attributes/materials",
-      detail: (id: string) => `/attributes/materials/${id}`,
-      bySlug: (slug: string) => `/attributes/materials/slug/${slug}`,
-      create: "/attributes/materials",
-      update: (id: string) => `/attributes/materials/${id}`,
-      delete: (id: string) => `/attributes/materials/${id}`,
+      list: "/api/v2/attributes/materials",
+      detail: (id: string) => `/api/v2/attributes/materials/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/materials/slug/${slug}`,
+      create: "/api/v2/attributes/materials",
+      update: (id: string) => `/api/v2/attributes/materials/${id}`,
+      delete: (id: string) => `/api/v2/attributes/materials/${id}`,
     },
     genders: {
-      list: "/attributes/genders",
-      detail: (id: string) => `/attributes/genders/${id}`,
-      bySlug: (slug: string) => `/attributes/genders/slug/${slug}`,
-      create: "/attributes/genders",
-      update: (id: string) => `/attributes/genders/${id}`,
-      delete: (id: string) => `/attributes/genders/${id}`,
+      list: "/api/v2/attributes/genders",
+      detail: (id: string) => `/api/v2/attributes/genders/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/genders/slug/${slug}`,
+      create: "/api/v2/attributes/genders",
+      update: (id: string) => `/api/v2/attributes/genders/${id}`,
+      delete: (id: string) => `/api/v2/attributes/genders/${id}`,
     },
     seasons: {
-      list: "/attributes/seasons",
-      detail: (id: string) => `/attributes/seasons/${id}`,
-      bySlug: (slug: string) => `/attributes/seasons/slug/${slug}`,
-      create: "/attributes/seasons",
-      update: (id: string) => `/attributes/seasons/${id}`,
-      delete: (id: string) => `/attributes/seasons/${id}`,
+      list: "/api/v2/attributes/seasons",
+      detail: (id: string) => `/api/v2/attributes/seasons/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/seasons/slug/${slug}`,
+      create: "/api/v2/attributes/seasons",
+      update: (id: string) => `/api/v2/attributes/seasons/${id}`,
+      delete: (id: string) => `/api/v2/attributes/seasons/${id}`,
     },
     styles: {
-      list: "/attributes/styles",
-      detail: (id: string) => `/attributes/styles/${id}`,
-      bySlug: (slug: string) => `/attributes/styles/slug/${slug}`,
+      list: "/api/v2/attributes/styles",
+      detail: (id: string) => `/api/v2/attributes/styles/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/styles/slug/${slug}`,
       byCategory: (categoryId: string) =>
-        `/attributes/styles/category/${categoryId}`,
-      create: "/attributes/styles",
-      update: (id: string) => `/attributes/styles/${id}`,
-      delete: (id: string) => `/attributes/styles/${id}`,
+        `/api/v2/attributes/styles/category/${categoryId}`,
+      create: "/api/v2/attributes/styles",
+      update: (id: string) => `/api/v2/attributes/styles/${id}`,
+      delete: (id: string) => `/api/v2/attributes/styles/${id}`,
     },
     patterns: {
-      list: "/attributes/patterns",
-      detail: (id: string) => `/attributes/patterns/${id}`,
-      bySlug: (slug: string) => `/attributes/patterns/slug/${slug}`,
-      create: "/attributes/patterns",
-      update: (id: string) => `/attributes/patterns/${id}`,
-      delete: (id: string) => `/attributes/patterns/${id}`,
+      list: "/api/v2/attributes/patterns",
+      detail: (id: string) => `/api/v2/attributes/patterns/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/patterns/slug/${slug}`,
+      create: "/api/v2/attributes/patterns",
+      update: (id: string) => `/api/v2/attributes/patterns/${id}`,
+      delete: (id: string) => `/api/v2/attributes/patterns/${id}`,
     },
     shoeHeights: {
-      list: "/attributes/shoe-heights",
-      detail: (id: string) => `/attributes/shoe-heights/${id}`,
-      bySlug: (slug: string) => `/attributes/shoe-heights/slug/${slug}`,
+      list: "/api/v2/attributes/shoe-heights",
+      detail: (id: string) => `/api/v2/attributes/shoe-heights/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/shoe-heights/slug/${slug}`,
       byCategory: (categoryId: string) =>
-        `/attributes/shoe-heights/category/${categoryId}`,
-      create: "/attributes/shoe-heights",
-      update: (id: string) => `/attributes/shoe-heights/${id}`,
-      delete: (id: string) => `/attributes/shoe-heights/${id}`,
+        `/api/v2/attributes/shoe-heights/category/${categoryId}`,
+      create: "/api/v2/attributes/shoe-heights",
+      update: (id: string) => `/api/v2/attributes/shoe-heights/${id}`,
+      delete: (id: string) => `/api/v2/attributes/shoe-heights/${id}`,
     },
     fits: {
-      list: "/attributes/fits",
-      detail: (id: string) => `/attributes/fits/${id}`,
-      bySlug: (slug: string) => `/attributes/fits/slug/${slug}`,
+      list: "/api/v2/attributes/fits",
+      detail: (id: string) => `/api/v2/attributes/fits/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/fits/slug/${slug}`,
       byCategory: (categoryId: string) =>
-        `/attributes/fits/category/${categoryId}`,
-      create: "/attributes/fits",
-      update: (id: string) => `/attributes/fits/${id}`,
-      delete: (id: string) => `/attributes/fits/${id}`,
+        `/api/v2/attributes/fits/category/${categoryId}`,
+      create: "/api/v2/attributes/fits",
+      update: (id: string) => `/api/v2/attributes/fits/${id}`,
+      delete: (id: string) => `/api/v2/attributes/fits/${id}`,
     },
     occasions: {
-      list: "/attributes/occasions",
-      detail: (id: string) => `/attributes/occasions/${id}`,
-      bySlug: (slug: string) => `/attributes/occasions/slug/${slug}`,
-      create: "/attributes/occasions",
-      update: (id: string) => `/attributes/occasions/${id}`,
-      delete: (id: string) => `/attributes/occasions/${id}`,
+      list: "/api/v2/attributes/occasions",
+      detail: (id: string) => `/api/v2/attributes/occasions/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/occasions/slug/${slug}`,
+      create: "/api/v2/attributes/occasions",
+      update: (id: string) => `/api/v2/attributes/occasions/${id}`,
+      delete: (id: string) => `/api/v2/attributes/occasions/${id}`,
     },
     collarTypes: {
-      list: "/attributes/collar-types",
-      detail: (id: string) => `/attributes/collar-types/${id}`,
-      bySlug: (slug: string) => `/attributes/collar-types/slug/${slug}`,
+      list: "/api/v2/attributes/collar-types",
+      detail: (id: string) => `/api/v2/attributes/collar-types/${id}`,
+      bySlug: (slug: string) => `/api/v2/attributes/collar-types/slug/${slug}`,
       byCategory: (categoryId: string) =>
-        `/attributes/collar-types/category/${categoryId}`,
-      create: "/attributes/collar-types",
-      update: (id: string) => `/attributes/collar-types/${id}`,
-      delete: (id: string) => `/attributes/collar-types/${id}`,
+        `/api/v2/attributes/collar-types/category/${categoryId}`,
+      create: "/api/v2/attributes/collar-types",
+      update: (id: string) => `/api/v2/attributes/collar-types/${id}`,
+      delete: (id: string) => `/api/v2/attributes/collar-types/${id}`,
     },
     allForCategory: (categoryId: string) =>
-      `/attributes/category/${categoryId}/all`,
+      `/api/v2/attributes/category/${categoryId}/all`,
   },
   cart: {
     get: "/cart",
@@ -344,6 +412,8 @@ export const endpoints = {
   orders: {
     list: "/orders",
     detail: (id: string) => `/orders/${id}`,
+    byNumber: (orderNumber: string) => `/orders/number/${orderNumber}`,
+    updateStatus: (id: string) => `/orders/${id}/status`,
     initiateCheckout: "/orders/checkout/initiate",
     completeCheckout: "/orders/checkout/complete",
   },

@@ -60,7 +60,7 @@ export class OrderService {
 
   // Get order by order number
   static async getOrderByNumber(orderNumber: string): Promise<V2ApiResponse<Order>> {
-    const response = await api.get(`/orders/number/${orderNumber}`);
+    const response = await api.get(endpoints.orders.byNumber(orderNumber));
     return response.data;
   }
 
@@ -121,10 +121,9 @@ export class OrderService {
     return this.getOrders({ limit, sort: '-createdAt' });
   }
 
-  // Update order status - API method (uses v2 API endpoint)
+  // Update order status - API method (uses v3 API endpoint)
   static async updateOrderStatus(orderId: string, status: string, reason?: string): Promise<V2ApiResponse<Order>> {
-    // Note: Status update is now available in v2 API
-    const response = await api.put(`/orders/${orderId}/status`, {
+    const response = await api.put(endpoints.orders.updateStatus(orderId), {
       status,
       reason
     });
