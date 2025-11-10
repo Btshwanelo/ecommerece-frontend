@@ -22,21 +22,8 @@ api.interceptors.request.use(
     let url = config.url || "";
     const method = config.method?.toLowerCase() || "get";
 
-    // Handle v2 endpoints: if URL starts with /api/v2, construct full URL from origin
-    // This is needed because baseURL is /api/v3, and we need to override it for v2
-    let fullUrl: string;
-    if (url.startsWith("/api/v2")) {
-      const baseURL = config.baseURL || "";
-      // Extract origin from baseURL (e.g., http://localhost:6000 from http://localhost:6000/api/v3)
-      const origin = baseURL.split("/api/")[0] || baseURL;
-      fullUrl = `${origin}${url}`;
-      // Override baseURL for this request - set to origin so axios doesn't double-concatenate
-      config.baseURL = origin;
-      // Update the URL to be relative to the new baseURL
-      config.url = url;
-    } else {
-      fullUrl = `${config.baseURL || ""}${url}`;
-    }
+    // All routes now use v3 - no need for v2 endpoint handling
+    let fullUrl = `${config.baseURL || ""}${url}`;
 
     // Define public endpoints - auth endpoints (login/register) should be public
     const isAuthEndpoint = url.includes("/users/login") || url.includes("/users/register");
@@ -93,15 +80,8 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const url = error.config?.url || "";
-    // Handle v2 endpoints - calculate fullUrl correctly
-    let fullUrl: string;
-    if (url.startsWith("/api/v2")) {
-      const baseURL = error.config?.baseURL || "";
-      const origin = baseURL.split("/api/")[0] || baseURL;
-      fullUrl = `${origin}${url}`;
-    } else {
-      fullUrl = `${error.config?.baseURL || ""}${url}`;
-    }
+    // All routes now use v3 - no need for v2 endpoint handling
+    const fullUrl = `${error.config?.baseURL || ""}${url}`;
     const method = error.config?.method?.toLowerCase() || "get";
 
     // Enhanced error logging with better context
@@ -414,6 +394,7 @@ export const endpoints = {
     detail: (id: string) => `/orders/${id}`,
     byNumber: (orderNumber: string) => `/orders/number/${orderNumber}`,
     updateStatus: (id: string) => `/orders/${id}/status`,
+    confirmPayment: (id: string) => `/orders/${id}/confirm-payment`,
     initiateCheckout: "/orders/checkout/initiate",
     completeCheckout: "/orders/checkout/complete",
   },
@@ -423,11 +404,11 @@ export const endpoints = {
     create: "/users",
     update: (id: string) => `/users/${id}`,
     delete: (id: string) => `/users/${id}`,
-    addresses: "/users/addresses",
-    addressDetail: (id: string) => `/users/addresses/${id}`,
-    createAddress: "/users/addresses",
-    updateAddress: (id: string) => `/users/addresses/${id}`,
-    deleteAddress: (id: string) => `/users/addresses/${id}`,
+    addresses: "/addresses",
+    addressDetail: (id: string) => `/addresses/${id}`,
+    createAddress: "/addresses",
+    updateAddress: (id: string) => `/addresses/${id}`,
+    deleteAddress: (id: string) => `/addresses/${id}`,
   },
   delivery: {
     list: "/delivery",

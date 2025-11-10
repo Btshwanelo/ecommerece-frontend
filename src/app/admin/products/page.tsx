@@ -140,12 +140,12 @@ export default function ProductsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Products</h1>
         </div>
         <div className="bg-white shadow rounded-lg">
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             <div className="animate-pulse space-y-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-16 bg-gray-200 rounded"></div>
@@ -182,14 +182,13 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600">Total: {total} products</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Products</h1>
         </div>
-        <div className="flex space-x-3">
-          <button
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          {/* <button
             onClick={() => {
               setFilters((prev) => ({
                 ...prev,
@@ -197,31 +196,33 @@ export default function ProductsPage() {
               }));
               fetchProducts();
             }}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center justify-center px-3 md:px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            Show All (Including Drafts)
+            <span className="hidden sm:inline">Show All (Including Drafts)</span>
+            <span className="sm:hidden">Show All</span>
           </button>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center justify-center px-3 md:px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            <FunnelIcon className="h-4 w-4 mr-2" />
-            Filters
-          </button>
+            <FunnelIcon className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Filters</span>
+          </button> */}
           <Link
             href="/admin/products/new"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center justify-center px-3 md:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add Product
+            <PlusIcon className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add Product</span>
+            <span className="sm:hidden">Add</span>
           </Link>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white shadow rounded-lg p-6">
+      {/* <div className="bg-white shadow rounded-lg p-4 md:p-6">
         <form onSubmit={handleSearch} className="mb-4">
-          <div className="flex space-x-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="flex-1">
               <input
                 type="text"
@@ -233,7 +234,7 @@ export default function ProductsPage() {
             </div>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
             >
               Search
             </button>
@@ -241,8 +242,8 @@ export default function ProductsPage() {
         </form>
 
         {showFilters && (
-          <div className="border-t pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="border-t pt-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status
@@ -337,145 +338,255 @@ export default function ProductsPage() {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
 
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
-          <div className="overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Product
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stock
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {Array.isArray(products) && products.length > 0 ? (
-                  products.map((product) => (
-                    <tr key={product._id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            {product.images && product.images.length > 0 ? (
-                              <img
-                                className="h-10 w-10 rounded-lg object-cover"
-                                src={product.images[0].url}
-                                alt={product.images[0].alt || product.name}
-                              />
-                            ) : (
-                              <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                                <span className="text-gray-400 text-xs">
-                                  No image
-                                </span>
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Product
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Stock
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {Array.isArray(products) && products.length > 0 ? (
+                    products.map((product) => (
+                      <tr key={product._id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              {product.images && product.images.length > 0 ? (
+                                <img
+                                  className="h-10 w-10 rounded-lg object-cover"
+                                  src={product.images[0].url}
+                                  alt={product.images[0].alt || product.name}
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                                  <span className="text-gray-400 text-xs">
+                                    No image
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {product.name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                SKU: {product.sku}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {typeof product.categoryId === "object"
+                            ? product.categoryId.name
+                            : "N/A"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div>
+                            <div className="font-medium">
+                              {formatCurrency(product.pricing.basePrice)}
+                            </div>
+                            {product.pricing.salePrice && (
+                              <div className="text-green-600 text-xs">
+                                Sale: {formatCurrency(product.pricing.salePrice)}
                               </div>
                             )}
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {product.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                              product.status
+                            )}`}
+                          >
+                            {product.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm text-gray-900">
+                              {product.inventory.stockQuantity}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              SKU: {product.sku}
-                            </div>
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getStockStatusColor(
+                                product.inventory.stockStatus
+                              )}`}
+                            >
+                              {product.inventory.stockStatus.replace("_", " ")}
+                            </span>
                           </div>
-                        </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <Link
+                              href={`/admin/products/${product._id}/edit`}
+                              className="inline-flex items-center px-2.5 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              title="Edit Product"
+                            >
+                              <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
+                              Edit
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteProduct(product._id)}
+                              className="inline-flex items-center px-2.5 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                              title="Delete Product"
+                            >
+                              <TrashIcon className="h-3.5 w-3.5 mr-1.5" />
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-6 py-4 text-center text-gray-500"
+                      >
+                        No products found
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile/Tablet Card View */}
+          <div className="lg:hidden space-y-4">
+            {Array.isArray(products) && products.length > 0 ? (
+              products.map((product) => (
+                <div
+                  key={product._id}
+                  className="border border-gray-200 rounded-lg p-4 space-y-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className="flex-shrink-0 h-16 w-16">
+                        {product.images && product.images.length > 0 ? (
+                          <img
+                            className="h-16 w-16 rounded-lg object-cover"
+                            src={product.images[0].url}
+                            alt={product.images[0].alt || product.name}
+                          />
+                        ) : (
+                          <div className="h-16 w-16 rounded-lg bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-400 text-xs text-center px-1">
+                              No image
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {product.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          SKU: {product.sku}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                      <Link
+                        href={`/admin/products/${product._id}/edit`}
+                        className="inline-flex items-center justify-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
+                        title="Edit Product"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1.5" />
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteProduct(product._id)}
+                        className="inline-flex items-center justify-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 whitespace-nowrap"
+                        title="Delete Product"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-1.5" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-gray-500">Category</p>
+                      <p className="text-gray-900 mt-1">
                         {typeof product.categoryId === "object"
                           ? product.categoryId.name
                           : "N/A"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>
-                          <div className="font-medium">
-                            {formatCurrency(product.pricing.basePrice)}
-                          </div>
-                          {product.pricing.salePrice && (
-                            <div className="text-green-600 text-xs">
-                              Sale: {formatCurrency(product.pricing.salePrice)}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                            product.status
-                          )}`}
-                        >
-                          {product.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm text-gray-900">
-                            {product.inventory.stockQuantity}
-                          </div>
-                          <span
-                            className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getStockStatusColor(
-                              product.inventory.stockStatus
-                            )}`}
-                          >
-                            {product.inventory.stockStatus.replace("_", " ")}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {product.productType}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Link
-                            href={`/admin/products/${product._id}/edit`}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="Edit Product"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteProduct(product._id)}
-                            className="text-red-600 hover:text-red-900"
-                            title="Delete Product"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-4 text-center text-gray-500"
-                    >
-                      No products found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Price</p>
+                      <p className="text-gray-900 font-medium mt-1">
+                        {formatCurrency(product.pricing.basePrice)}
+                      </p>
+                      {product.pricing.salePrice && (
+                        <p className="text-green-600 text-xs mt-1">
+                          Sale: {formatCurrency(product.pricing.salePrice)}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Status</p>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${getStatusColor(
+                          product.status
+                        )}`}
+                      >
+                        {product.status}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Stock</p>
+                      <p className="text-gray-900 mt-1">
+                        {product.inventory.stockQuantity}
+                      </p>
+                      <span
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium mt-1 ${getStockStatusColor(
+                          product.inventory.stockStatus
+                        )}`}
+                      >
+                        {product.inventory.stockStatus.replace("_", " ")}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500">Type</p>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                        {product.productType}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No products found
+              </div>
+            )}
           </div>
 
           {/* Pagination */}
@@ -485,16 +596,21 @@ export default function ProductsPage() {
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
+                <div className="flex items-center px-2">
+                  <span className="text-sm text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                </div>
                 <button
                   onClick={() =>
                     setCurrentPage(Math.min(totalPages, currentPage + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
@@ -502,8 +618,8 @@ export default function ProductsPage() {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing {(currentPage - 1) * 10 + 1} to{" "}
-                    {Math.min(currentPage * 10, total)} of{" "}
+                    Showing <span className="font-medium">{(currentPage - 1) * (filters.limit || 20) + 1}</span> to{" "}
+                    <span className="font-medium">{Math.min(currentPage * (filters.limit || 20), total)}</span> of{" "}
                     <span className="font-medium">{total}</span> results
                   </p>
                 </div>
@@ -514,7 +630,7 @@ export default function ProductsPage() {
                         setCurrentPage(Math.max(1, currentPage - 1))
                       }
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
@@ -523,7 +639,7 @@ export default function ProductsPage() {
                         setCurrentPage(Math.min(totalPages, currentPage + 1))
                       }
                       disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
                     </button>

@@ -1,45 +1,78 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Search, ShoppingBag, User, Menu, X, Heart, LogOut, Settings } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useStoreConfig, useCurrency } from '@/hooks/useStoreConfig';
-import { User as UserType, Cart } from '@/types';
-import { CartService } from '@/services/v2';
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Search,
+  ShoppingBag,
+  User,
+  Menu,
+  X,
+  Heart,
+  LogOut,
+  Settings,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useStoreConfig, useCurrency } from "@/hooks/useStoreConfig";
+import { User as UserType, Cart } from "@/types";
+import { CartService } from "@/services/v2";
+import { useAppSelector } from "@/store/hooks";
 
 const Header = () => {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  
+
   // Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserType | null>(null);
-  
+
   // Cart state
   const [cart, setCart] = useState<Cart | null>(null);
   const [cartLoading, setCartLoading] = useState(false);
-  
-  const { storeName, logo, colors, shipping, isFeatureEnabled } = useStoreConfig();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Get cart count from Redux store
+  const cartItemCount = useAppSelector((state) => state.cart.itemCount);
+  const prevCartItemCountRef = useRef<number>(cartItemCount);
+  const isFirstRenderRef = useRef<boolean>(true);
+
+  // Track client-side mounting to prevent hydration mismatches
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Track cart count changes
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      prevCartItemCountRef.current = cartItemCount;
+    } else {
+      prevCartItemCountRef.current = cartItemCount;
+    }
+  }, [cartItemCount]);
+
+  const { storeName, logo, colors, shipping, isFeatureEnabled } =
+    useStoreConfig();
   const { format } = useCurrency();
 
   const navigation = [
-    { name: 'New & Featured', href: '/products/category/new' },
-    { name: 'Men', href: '/products/category/men' },
-    { name: 'Women', href: '/products/category/women' },
-    { name: 'Kids', href: '/products/category/kids' },
-    { name: 'Sale', href: '/products/category/sales' },
+    // { name: "New & Featured", href: "/products/category/new" },
+    { name: "Men", href: "/products/category/men" },
+    { name: "Women", href: "/products/category/women" },
+    { name: "Kids", href: "/products/category/kids" },
+    { name: "Apparel", href: "/products/category/kids" },
+    { name: "Sale", href: "/products/category/sales" },
   ];
 
   // Check authentication status
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
-    
+
     if (token && userData) {
       try {
         const parsedUser = JSON.parse(userData);
@@ -62,7 +95,7 @@ const Header = () => {
     const handleStorageChange = () => {
       const token = localStorage.getItem("token");
       const userData = localStorage.getItem("user");
-      
+
       if (token && userData) {
         try {
           const parsedUser = JSON.parse(userData);
@@ -78,8 +111,8 @@ const Header = () => {
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // Close dropdown when clicking outside
@@ -87,20 +120,22 @@ const Header = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isUserDropdownOpen) {
         const target = event.target as Element;
-        if (!target.closest('.user-dropdown')) {
+        if (!target.closest(".user-dropdown")) {
           setIsUserDropdownOpen(false);
         }
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isUserDropdownOpen]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
+      window.location.href = `/products?search=${encodeURIComponent(
+        searchQuery
+      )}`;
     }
   };
 
@@ -115,12 +150,12 @@ const Header = () => {
 
   const getUserDisplayName = () => {
     if (!user) return "";
-    
+
     // Try to get full name from profile
     if (user.profile?.firstName && user.profile?.lastName) {
       return `${user.profile.firstName} ${user.profile.lastName}`;
     }
-    
+
     // Fallback to email
     return user.email || "User";
   };
@@ -145,30 +180,28 @@ const Header = () => {
     fetchCart();
   }, []);
 
-  const getCartItemCount = () => {
-    if (!cart || !cart.items) return 0;
-    return cart.items.reduce((total, item) => total + item.quantity, 0);
-  };
-
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       {/* Top banner */}
-      {shipping.freeShippingThreshold && (
+      {/* {shipping.freeShippingThreshold && (
         <div className="bg-black text-white text-center py-2 text-sm">
           <p>Free shipping on orders over {format(shipping.freeShippingThreshold)}</p>
         </div>
-      )}
+      )} */}
 
       {/* Main header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="  px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex-shrink-0">
-            <img 
-              src={logo.primary} 
+            {/* <img
+              src={logo.primary}
               alt={`${storeName} logo`}
               className="h-8 w-auto"
-            />
+            /> */}
+            <h2 className="text-xl font-bold text-black capitalize">
+              gencreps
+            </h2>
           </Link>
 
           {/* Desktop Navigation */}
@@ -194,20 +227,42 @@ const Header = () => {
               <Search className="h-5 w-5" />
             </button>
 
-            {/* Wishlist */}
-            {isFeatureEnabled('enableWishlist') && (
-              <Link href="/wishlist" className="p-2 text-gray-700 hover:text-black transition-colors">
-                <Heart className="h-5 w-5" />
-              </Link>
-            )}
-
             {/* Cart */}
-            <Link href="/cart" className="p-2 text-gray-700 hover:text-black transition-colors relative">
+            <Link
+              href="/cart"
+              className="p-2 text-gray-700 hover:text-black transition-colors relative"
+            >
               <ShoppingBag className="h-5 w-5" />
-              {getCartItemCount() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-black text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {getCartItemCount()}
-                </span>
+              {isMounted && (
+                <AnimatePresence initial={false}>
+                  {cartItemCount > 0 && (
+                    <motion.span
+                      key="cart-badge"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30,
+                      }}
+                      className="absolute -top-1 -right-1 bg-black text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                    >
+                      <motion.span
+                        key={cartItemCount}
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 600,
+                          damping: 25,
+                        }}
+                      >
+                        {cartItemCount > 99 ? "99+" : cartItemCount}
+                      </motion.span>
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               )}
             </Link>
 
@@ -224,7 +279,10 @@ const Header = () => {
                   </span>
                 </button>
               ) : (
-                <Link href="/auth/login" className="p-2 text-gray-700 hover:text-black transition-colors">
+                <Link
+                  href="/auth/login"
+                  className="p-2 text-gray-700 hover:text-black transition-colors"
+                >
                   <User className="h-5 w-5" />
                 </Link>
               )}
@@ -233,9 +291,13 @@ const Header = () => {
               <AnimatePresence>
                 {isUserDropdownOpen && isLoggedIn && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                    transition={{
+                      duration: 0.2,
+                      ease: [0.4, 0, 0.2, 1],
+                    }}
                     className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
                   >
                     <div className="px-4 py-2 border-b border-gray-100">
@@ -244,7 +306,7 @@ const Header = () => {
                       </p>
                       <p className="text-xs text-gray-500">{user?.email}</p>
                     </div>
-                    
+
                     <Link
                       href="/profile"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -253,7 +315,7 @@ const Header = () => {
                       <Settings className="h-4 w-4 mr-3" />
                       Profile Settings
                     </Link>
-                    
+
                     <Link
                       href="/orders"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -262,7 +324,7 @@ const Header = () => {
                       <ShoppingBag className="h-4 w-4 mr-3" />
                       My Orders
                     </Link>
-                    
+
                     <button
                       onClick={handleLogout}
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -280,7 +342,11 @@ const Header = () => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden p-2 text-gray-700 hover:text-black transition-colors"
             >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {isMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </button>
           </div>
         </div>
@@ -289,23 +355,50 @@ const Header = () => {
         <AnimatePresence>
           {isSearchOpen && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="border-t border-gray-200 py-4"
+              initial={{ height: 0, opacity: 0, y: -10 }}
+              animate={{ height: "auto", opacity: 1, y: 0 }}
+              exit={{ height: 0, opacity: 0, y: -10 }}
+              transition={{
+                height: {
+                  duration: 0.3,
+                  ease: [0.4, 0, 0.2, 1],
+                },
+                opacity: {
+                  duration: 0.2,
+                  ease: [0.4, 0, 0.2, 1],
+                },
+                y: {
+                  duration: 0.25,
+                  ease: [0.4, 0, 0.2, 1],
+                },
+              }}
+              className="border-t border-gray-200 overflow-hidden"
             >
-              <form onSubmit={handleSearch} className="max-w-md mx-auto">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search for products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-                  />
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                </div>
-              </form>
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{
+                  delay: 0.1,
+                  duration: 0.2,
+                  ease: [0.4, 0, 0.2, 1],
+                }}
+                className="py-4"
+              >
+                <form onSubmit={handleSearch} className="max-w-md mx-auto">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search for products..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-black  transition-all"
+                      autoFocus
+                    />
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </form>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -316,9 +409,13 @@ const Header = () => {
         {isMenuOpen && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="md:hidden border-t border-gray-200 bg-white"
+            transition={{
+              duration: 0.3,
+              ease: [0.4, 0, 0.2, 1],
+            }}
+            className="md:hidden border-t border-gray-200 bg-white overflow-hidden"
           >
             <div className="px-4 py-6 space-y-4">
               {navigation.map((item) => (
@@ -340,4 +437,3 @@ const Header = () => {
 };
 
 export default Header;
-

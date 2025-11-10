@@ -87,7 +87,7 @@ export class CartService {
     return response.data;
   }
 
-  // Add to cart with guest session
+  // Add to cart with guest session - now using v3 routes
   static async addToCartWithSession(data: AddToCartData, sessionId: string, guestId?: string): Promise<V2ApiResponse<Cart>> {
     const headers: Record<string, string> = {
       'x-session-id': sessionId,
@@ -97,7 +97,12 @@ export class CartService {
       headers['x-guest-id'] = guestId;
     }
 
-    const response = await api.post(endpoints.cart.add, data, { headers });
+    // Use v3 route for guest checkout support
+    const response = await api.post('/cart/add', {
+      productId: data.productId,
+      size: undefined, // v3 uses 'size' instead of variantId
+      quantity: data.quantity,
+    }, { headers });
     return response.data;
   }
 }

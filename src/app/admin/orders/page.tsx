@@ -182,12 +182,12 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Orders</h1>
         </div>
         <div className="bg-white shadow rounded-lg">
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             <div className="animate-pulse space-y-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-16 bg-gray-200 rounded"></div>
@@ -200,27 +200,28 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-          <p className="text-gray-600">Total: {total} orders</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            Orders
+          </h1>
         </div>
-        <div className="flex space-x-3">
-          <button
+        <div className="flex">
+          {/* <button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center justify-center px-3 md:px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            <FunnelIcon className="h-4 w-4 mr-2" />
-            Filters
-          </button>
+            <FunnelIcon className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Filters</span>
+          </button> */}
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white shadow rounded-lg p-6">
+      {/* <div className="bg-white shadow rounded-lg p-4 md:p-6">
         <form onSubmit={handleSearch} className="mb-4">
-          <div className="flex space-x-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="flex-1">
               <input
                 type="text"
@@ -232,16 +233,17 @@ export default function OrdersPage() {
             </div>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
             >
-              <MagnifyingGlassIcon className="h-4 w-4" />
+              <MagnifyingGlassIcon className="h-4 w-4 inline sm:mr-2" />
+              <span className="hidden sm:inline">Search</span>
             </button>
           </div>
         </form>
 
         {showFilters && (
-          <div className="border-t pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="border-t pt-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Order Status
@@ -330,127 +332,226 @@ export default function OrdersPage() {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
 
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
-          <div className="overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Order
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Order Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payment
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {Array.isArray(orders) && orders.length > 0 ? (
-                  orders.map((order) => (
-                    <tr key={order._id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          #{order.orderNumber || order._id.slice(-8)}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {order.items.length} item(s)
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {order.shippingAddress?.firstName}{" "}
-                          {order.shippingAddress?.lastName}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {order.customerEmail}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {format(new Date(order.createdAt), "MMM dd, yyyy")}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="font-medium">
-                          {formatCurrency(order.totals?.total)}
-                        </div>
-                        {order.totals?.discountAmount > 0 && (
-                          <div className="text-xs text-green-600">
-                            -{formatCurrency(order.totals?.discountAmount)}{" "}
-                            discount
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Order
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Order Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Payment
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {Array.isArray(orders) && orders.length > 0 ? (
+                    orders.map((order) => (
+                      <tr key={order._id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            #{order.orderNumber || order._id.slice(-8)}
                           </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                            order.status
-                          )}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col space-y-1">
+                          <div className="text-sm text-gray-500">
+                            {order.items.length} item(s)
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {order.shippingAddress?.firstName}{" "}
+                            {order.shippingAddress?.lastName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {order.customerEmail}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {format(new Date(order.createdAt), "MMM dd, yyyy")}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className="font-medium">
+                            {formatCurrency(order.totals?.total)}
+                          </div>
+                          {order.totals?.discountAmount > 0 && (
+                            <div className="text-xs text-green-600">
+                              -{formatCurrency(order.totals?.discountAmount)}{" "}
+                              discount
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                              order.payment?.status
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                              order.status
                             )}`}
                           >
-                            {order.payment?.status}
+                            {order.status}
                           </span>
-                          <span className="text-xs text-gray-500">
-                            {order.payment?.method}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleViewOrder(order)}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="View Order Details"
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleStatusUpdateClick(order)}
-                            className="text-green-600 hover:text-green-900"
-                            title="Update Order Status"
-                          >
-                            <CheckCircleIcon className="h-4 w-4" />
-                          </button>
-                        </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-col space-y-1">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(
+                                order.payment?.status
+                              )}`}
+                            >
+                              {order.payment?.status}
+                            </span>
+                            {/* <span className="text-xs text-gray-500">
+                              {order.payment?.method}
+                            </span> */}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleViewOrder(order)}
+                              className="inline-flex items-center px-2.5 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              title="View Order Details"
+                            >
+                              <EyeIcon className="h-3.5 w-3.5 mr-1.5" />
+                              View
+                            </button>
+                            <button
+                              onClick={() => handleStatusUpdateClick(order)}
+                              className="inline-flex items-center px-2.5 py-1.5 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              title="Update Order Status"
+                            >
+                              <CheckCircleIcon className="h-3.5 w-3.5 mr-1.5" />
+                              Update
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-6 py-4 text-center text-gray-500"
+                      >
+                        No orders found
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-4 text-center text-gray-500"
-                    >
-                      No orders found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile/Tablet Card View */}
+          <div className="lg:hidden space-y-4">
+            {Array.isArray(orders) && orders.length > 0 ? (
+              orders.map((order) => (
+                <div
+                  key={order._id}
+                  className="border border-gray-200 rounded-lg p-4 space-y-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-gray-900">
+                        #{order.orderNumber || order._id.slice(-8)}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {order.items.length} item(s) •{" "}
+                        {format(new Date(order.createdAt), "MMM dd, yyyy")}
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleViewOrder(order)}
+                        className="inline-flex items-center justify-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
+                        title="View Order Details"
+                      >
+                        <EyeIcon className="h-4 w-4 mr-1.5" />
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => handleStatusUpdateClick(order)}
+                        className="inline-flex items-center justify-center px-3 py-1.5 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 whitespace-nowrap"
+                        title="Update Order Status"
+                      >
+                        <CheckCircleIcon className="h-4 w-4 mr-1.5" />
+                        Update Status
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-gray-500">Customer</p>
+                      <p className="text-gray-900 mt-1 truncate">
+                        {order.shippingAddress?.firstName}{" "}
+                        {order.shippingAddress?.lastName}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        {order.customerEmail}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Total</p>
+                      <p className="text-gray-900 font-medium mt-1">
+                        {formatCurrency(order.totals?.total)}
+                      </p>
+                      {order.totals?.discountAmount > 0 && (
+                        <p className="text-green-600 text-xs mt-1">
+                          -{formatCurrency(order.totals?.discountAmount)}{" "}
+                          discount
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Order Status</p>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${getStatusColor(
+                          order.status
+                        )}`}
+                      >
+                        {order.status}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Payment</p>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${getPaymentStatusColor(
+                          order.payment?.status
+                        )}`}
+                      >
+                        {order.payment?.status}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {order.payment?.method}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No orders found
+              </div>
+            )}
           </div>
 
           {/* Pagination */}
@@ -460,16 +561,21 @@ export default function OrdersPage() {
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
+                <div className="flex items-center px-2">
+                  <span className="text-sm text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                </div>
                 <button
                   onClick={() =>
                     setCurrentPage(Math.min(totalPages, currentPage + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
@@ -477,9 +583,15 @@ export default function OrdersPage() {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing {(currentPage - 1) * 10 + 1} to{" "}
-                    {Math.min(currentPage * 10, total)} of{" "}
-                    <span className="font-medium">{total}</span> results
+                    Showing{" "}
+                    <span className="font-medium">
+                      {(currentPage - 1) * (filters.limit || 10) + 1}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-medium">
+                      {Math.min(currentPage * (filters.limit || 10), total)}
+                    </span>{" "}
+                    of <span className="font-medium">{total}</span> results
                   </p>
                 </div>
                 <div>
@@ -489,7 +601,7 @@ export default function OrdersPage() {
                         setCurrentPage(Math.max(1, currentPage - 1))
                       }
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
                     </button>
@@ -498,7 +610,7 @@ export default function OrdersPage() {
                         setCurrentPage(Math.min(totalPages, currentPage + 1))
                       }
                       disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
                     </button>
@@ -512,29 +624,29 @@ export default function OrdersPage() {
 
       {/* Order Details Modal */}
       {showOrderDetails && selectedOrder && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md overflow-y-auto h-full w-full z-50 p-4">
+          <div className="relative border-none top-4 md:top-10 mx-auto p-4 md:p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white/95 backdrop-blur-sm">
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-base md:text-lg font-medium text-gray-900">
                   Order Details - #
                   {selectedOrder.orderNumber || selectedOrder._id.slice(-8)}
                 </h3>
                 <button
                   onClick={() => setShowOrderDetails(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-1"
                 >
-                  <XMarkIcon className="h-6 w-6" />
+                  <XMarkIcon className="h-5 w-5 md:h-6 md:w-6" />
                 </button>
               </div>
 
               <div className="space-y-6">
                 {/* Order Summary */}
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
                   <h4 className="text-sm font-medium text-gray-900 mb-3">
                     Order Summary
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         Order Status
@@ -590,7 +702,7 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Order Items */}
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
                   <h4 className="text-sm font-medium text-gray-900 mb-3">
                     Order Items
                   </h4>
@@ -598,9 +710,9 @@ export default function OrdersPage() {
                     {selectedOrder.items.map((item, index) => (
                       <div
                         key={index}
-                        className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0"
+                        className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-200 last:border-b-0 gap-2"
                       >
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900">
                             {item?.productName || item?.productId?.name}
                           </p>
@@ -613,7 +725,7 @@ export default function OrdersPage() {
                             SKU: {item.sku} | Qty: {item.quantity}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right flex-shrink-0">
                           <p className="text-sm font-medium text-gray-900">
                             {formatCurrency(item.totalPrice)}
                           </p>
@@ -654,7 +766,8 @@ export default function OrdersPage() {
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Discount:</span>
                         <span className="text-green-600">
-                          -{formatCurrency(selectedOrder.totals?.discountAmount)}
+                          -
+                          {formatCurrency(selectedOrder.totals?.discountAmount)}
                         </span>
                       </div>
                     )}
@@ -702,9 +815,9 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Addresses */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
                   {/* Shipping Address */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
                     <h4 className="text-sm font-medium text-gray-900 mb-3">
                       Shipping Address
                     </h4>
@@ -732,7 +845,7 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Billing Address */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
                     <h4 className="text-sm font-medium text-gray-900 mb-3">
                       Billing Address
                     </h4>
@@ -773,10 +886,10 @@ export default function OrdersPage() {
                 )}
 
                 {/* Actions */}
-                <div className="flex justify-end space-x-3 pt-4 border-t">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
                   <button
                     onClick={() => setShowOrderDetails(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
                     Close
                   </button>
@@ -785,7 +898,7 @@ export default function OrdersPage() {
                       setShowOrderDetails(false);
                       handleStatusUpdateClick(selectedOrder);
                     }}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                    className="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
                   >
                     Update Status
                   </button>
@@ -798,18 +911,18 @@ export default function OrdersPage() {
 
       {/* Status Update Modal */}
       {showStatusModal && selectedOrder && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md overflow-y-auto h-full w-full z-50 p-4">
+          <div className="relative border-none top-4 md:top-10 mx-auto p-4 md:p-5 border w-full max-w-md shadow-lg rounded-md bg-white/95 backdrop-blur-sm">
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-base md:text-lg font-medium text-gray-900">
                   Update Order Status
                 </h3>
                 <button
                   onClick={() => setShowStatusModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-1"
                 >
-                  <XMarkIcon className="h-6 w-6" />
+                  <XMarkIcon className="h-5 w-5 md:h-6 md:w-6" />
                 </button>
               </div>
 
@@ -912,11 +1025,11 @@ export default function OrdersPage() {
                 )}
 
                 {/* Actions */}
-                <div className="flex justify-end space-x-3 pt-4 border-t">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
                   <button
                     onClick={() => setShowStatusModal(false)}
                     disabled={updatingStatus}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
@@ -925,7 +1038,7 @@ export default function OrdersPage() {
                     disabled={
                       updatingStatus || newStatus === selectedOrder.status
                     }
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {updatingStatus ? "Updating..." : "Update Status"}
                   </button>

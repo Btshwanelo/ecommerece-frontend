@@ -1,600 +1,794 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft, ShoppingBag, Plus, Minus } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
-  Trash2,
-  Plus,
-  Minus,
-  ArrowLeft,
-  User,
-  ShoppingCart,
-  AlertCircle,
-} from "lucide-react";
-import { motion } from "framer-motion";
-import { Cart, CartItem } from "@/types";
-import { CartService, UserService } from "@/services/v2";
-import useStoreConfig from "@/hooks/useStoreConfig";
-import AuthDrawer from "@/components/auth/AuthDrawer";
+  updateItemQuantity,
+  removeItem,
+  clearCart,
+} from "@/store/slices/cartSlice";
+import { api } from "@/lib/api";
 import Layout from "@/components/layout/Layout";
 
 export default function CartPage() {
   const router = useRouter();
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const dispatch = useAppDispatch();
 
-  // Local state for v2 cart data
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [cartLoading, setCartLoading] = useState(true);
-  const [cartError, setCartError] = useState<string | null>(null);
+  // Get cart from Redux store
+  const cart = useAppSelector((state) => state.cart);
+  const cartItemCount = useAppSelector((state) => state.cart.itemCount);
+  console.log("Cart in CartPage:", cart);
+  // Form state
+  const [email, setEmail] = useState("");
+  const [subscribe, setSubscribe] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [address, setAddress] = useState("");
+  const [apartment, setApartment] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
+  const [state, setState] = useState("");
+  const [zipCode, setZipCode] = useState("");
 
-  // Authentication state
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showAuthDrawer, setShowAuthDrawer] = useState(false);
+  // Payment state
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  const { storeName, storeTagline, socialLinks, storeWebsite } =
-    useStoreConfig();
-
-  // Fetch cart data from v2 API
-  const fetchCart = async () => {
-    try {
-      setCartLoading(true);
-      setCartError(null);
-
-      const response = await CartService.getCart();
-      console.log("Cart API response:", response);
-
-      if (response.success) {
-        setCart((response as any).cart || response.data || null);
-      } else {
-        setCartError(response.error || "Failed to fetch cart");
-        setCart(null);
-      }
-    } catch (error: any) {
-      console.error("Error fetching cart:", error);
-      setCartError(error?.response?.data?.error || "Failed to fetch cart");
-      setCart(null);
-    } finally {
-      setCartLoading(false);
-    }
+  // Format price
+  const formatPrice = (price: number, currency: string = "R") => {
+    const currencySymbol = currency === "R" ? "R" : "$";
+    return `${currencySymbol} ${price.toFixed(2)}`;
   };
 
-  // Check authentication status
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
-
-  useEffect(() => {
-    fetchCart();
-  }, []);
-
-  // Handle successful authentication
-  const handleAuthSuccess = async (user: any, token: string) => {
-    console.log("Authentication successful:", user);
-    setIsLoggedIn(true);
-    setShowAuthDrawer(false);
-    // Optionally refresh cart data after authentication
-    fetchCart();
-    // Redirect to checkout after successful authentication
-    router.push("/checkout");
-  };
-
-  // Handle checkout button click
-  const handleCheckoutClick = (e: React.MouseEvent) => {
-    if (!isLoggedIn) {
-      e.preventDefault();
-      setShowAuthDrawer(true);
-    }
-    // If logged in, let the Link component handle the navigation
-  };
-
-  const cartItems = cart?.items || [];
-
-  const updateQuantity = async (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-
-    setIsUpdating(true);
-    try {
-      // Pass quantity as an object with quantity property
-      await CartService.updateCartItem(itemId, { quantity: newQuantity });
-      // Refresh cart data
-      fetchCart();
-    } catch (error) {
-      console.error("Error updating cart item:", error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const removeItem = async (itemId: string) => {
-    try {
-      await CartService.removeCartItem(itemId);
-      // Refresh cart data
-      fetchCart();
-    } catch (error) {
-      console.error("Error removing item from cart:", error);
-    }
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(price);
-  };
-
-  // Calculate totals - use v2 API totals structure
-  const subtotal = cart?.totals?.subtotal || 0;
-  const shipping = cart?.totals?.shippingAmount || 0;
-  const tax = cart?.totals?.taxAmount || 0;
-  const discount = cart?.totals?.discountAmount || 0;
-  const total = cart?.totals?.total || 0;
-
-  // Get product image - handle v2 API structure where product data is in productId
+  // Get product image
   const getProductImage = (item: any) => {
-    // v2 API has product data in productId field
-    const product = item.productId || item.product;
-
+    const product = item.product;
     if (product?.images && product.images.length > 0) {
-      // If images is an array of strings (URLs)
       if (typeof product.images[0] === "string") {
         return product.images[0];
       }
-      // If images is an array of objects - v2 API uses 'url' property
       if (typeof product.images[0] === "object") {
-        // First try to find the primary image
         const primaryImage = product.images.find((img: any) => img.isPrimary);
-        if (primaryImage) {
-          // v2 API uses 'url' property
-          if (primaryImage.url) {
-            return primaryImage.url;
-          }
-          // v1 API fallback
-          if (primaryImage.downloadUrl) {
-            return primaryImage.downloadUrl;
-          }
-        }
-        // If no primary image, use the first image
-        if (product.images[0].url) {
-          return product.images[0].url;
-        }
-        if (product.images[0].downloadUrl) {
-          return product.images[0].downloadUrl;
-        }
-        // Fallback to directUrl if downloadUrl is not available
-        if (product.images[0].directUrl) {
-          return product.images[0].directUrl;
-        }
+        if (primaryImage?.url) return primaryImage.url;
+        if (product.images[0].url) return product.images[0].url;
       }
     }
     return null;
   };
 
-  const handleImageError = (itemId: string) => {
-    setImageErrors((prev) => new Set(prev).add(itemId));
+  // Get product code (SKU or generated from product)
+  const getProductCode = (item: any) => {
+    return item.product.sku || item.product._id.slice(-6).toUpperCase();
   };
 
-  // Loading State Component
-  const LoadingState = () => (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg p-6">
-                <div className="space-y-6">
-                  {[...Array(3)].map((_, index) => (
-                    <div key={index} className="flex space-x-4">
-                      <div className="w-20 h-20 bg-gray-200 rounded-lg"></div>
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg p-6 h-64"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Handle quantity update
+  const handleQuantityUpdate = (itemId: string, quantity: number) => {
+    if (quantity <= 0) {
+      dispatch(removeItem(itemId));
+    } else {
+      dispatch(updateItemQuantity({ itemId, quantity }));
+    }
+  };
 
-  // Error State Component
-  const ErrorState = () => (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="bg-white rounded-lg shadow-sm p-8 max-w-md w-full text-center">
-            <div className="flex justify-center mb-4">
-              <div className="bg-red-100 rounded-full p-3">
-                <AlertCircle className="h-8 w-8 text-red-600" />
-              </div>
-            </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              Unable to Load Cart
-            </h2>
-            <p className="text-gray-600 mb-6">
-              {cartError || "We couldn't load your cart. Please try again."}
-            </p>
-            <div className="space-y-3">
-              <button
-                onClick={fetchCart}
-                className="w-full bg-black text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
-              >
-                Try Again
-              </button>
-              <Link
-                href="/"
-                className="block w-full bg-gray-100 text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
-              >
-                Return to Home
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Validate form
+  const validateForm = () => {
+    if (!email || !email.includes("@")) {
+      setPaymentError("Please enter a valid email address");
+      return false;
+    }
+    if (!firstName || !lastName) {
+      setPaymentError("Please enter your first and last name");
+      return false;
+    }
+    if (!address) {
+      setPaymentError("Please enter your address");
+      return false;
+    }
+    if (!city || !country || !state || !zipCode) {
+      setPaymentError("Please complete all address fields");
+      return false;
+    }
+    return true;
+  };
 
-  // Empty Cart State Component
-  const EmptyCartState = () => (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="bg-white rounded-lg shadow-sm p-8 max-w-md w-full text-center">
-            <div className="flex justify-center mb-4">
-              <div className="bg-gray-100 rounded-full p-4">
-                <ShoppingCart className="h-12 w-12 text-gray-400" />
-              </div>
-            </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              Your Cart is Empty
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Looks like you haven't added anything to your cart yet. Start
-              shopping to add items!
+  // Sync Redux cart to backend before checkout (guest only) - using v3 APIs
+  const syncCartToBackend = async () => {
+    try {
+      // Get or create session ID for guest checkout
+      let sessionId = sessionStorage.getItem("sessionId");
+      if (!sessionId) {
+        sessionId = `session-${Date.now()}-${Math.random()
+          .toString(36)
+          .substr(2, 9)}`;
+        sessionStorage.setItem("sessionId", sessionId);
+      }
+
+      // Clear existing backend cart first (in case of updates) - using v3 routes
+      try {
+        await api.delete("/cart/clear", {
+          headers: {
+            "x-session-id": sessionId,
+          },
+        });
+      } catch (error) {
+        // Cart might not exist yet, that's okay
+        console.log("No existing cart to clear");
+      }
+
+      // Sync each cart item to backend cart using v3 routes
+      for (const item of cart.items) {
+        await api.post(
+          "/cart/add",
+          {
+            productId: item.productId,
+            size: item.size,
+            quantity: item.quantity,
+          },
+          {
+            headers: {
+              "x-session-id": sessionId,
+            },
+          }
+        );
+      }
+
+      return sessionId;
+    } catch (error: any) {
+      console.error("Error syncing cart to backend:", error);
+      throw error;
+    }
+  };
+
+  // Handle Payfast payment
+  const handlePayfastPayment = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setProcessingPayment(true);
+    setPaymentError(null);
+
+    try {
+      // First, sync Redux cart to backend (guest only)
+      const sessionId = await syncCartToBackend();
+
+      // Ensure sessionId is stored
+      sessionStorage.setItem("sessionId", sessionId);
+
+      // Create address first (required by backend) - using v3 routes
+      // For guest checkout, we need to pass sessionId in headers
+      // Backend v3 uses addressLine1/addressLine2
+      const addressData = {
+        firstName,
+        lastName,
+        addressLine1: address,
+        addressLine2: apartment || "",
+        city,
+        state,
+        postalCode: zipCode,
+        country,
+        type: "both",
+        isDefault: false,
+      };
+
+      // Use v3 addresses route for guest checkout
+      const addressResponse = await api.post("/addresses", addressData, {
+        headers: {
+          "x-session-id": sessionId,
+        },
+      });
+
+      const addressResponseData = addressResponse.data;
+
+      if (!addressResponseData.success) {
+        throw new Error(
+          addressResponseData.error || "Failed to create address"
+        );
+      }
+
+      const addressId =
+        addressResponseData.address?._id || addressResponseData.data?._id;
+
+      if (!addressId) {
+        throw new Error("Address ID not found after creation");
+      }
+
+      // Initiate checkout to validate cart (guest checkout) - using v3 routes
+      await api.post(
+        "/orders/checkout/initiate",
+        {},
+        {
+          headers: {
+            "x-session-id": sessionId,
+          },
+        }
+      );
+
+      // Get available delivery options (guest checkout) - using v3 routes
+      const queryParams = new URLSearchParams({
+        cartTotal: cart.total.toString(),
+        weight: "0", // You might want to calculate total weight from cart items
+        region: state || country || "",
+      });
+
+      const deliveryResponse = await api.get(
+        `/delivery/available?${queryParams.toString()}`,
+        {
+          headers: {
+            "x-session-id": sessionId,
+          },
+        }
+      );
+
+      const deliveryResponseData = deliveryResponse.data;
+
+      const deliveryOptions =
+        deliveryResponseData.deliveryOptions || deliveryResponseData.data || [];
+
+      console.log("Delivery options response:", deliveryResponseData);
+      console.log("Delivery options:", deliveryOptions);
+
+      if (!deliveryOptions || deliveryOptions.length === 0) {
+        // Try getting all delivery options without region filter as fallback
+        const fallbackResponse = await api.get(
+          `/delivery/available?cartTotal=${cart.total.toString()}&weight=0`,
+          {
+            headers: {
+              "x-session-id": sessionId,
+            },
+          }
+        );
+
+        const fallbackDeliveryOptions =
+          fallbackResponse.data.deliveryOptions ||
+          fallbackResponse.data.data ||
+          [];
+
+        if (!fallbackDeliveryOptions || fallbackDeliveryOptions.length === 0) {
+          throw new Error(
+            "No delivery options available. Please contact support."
+          );
+        }
+
+        // Use first available delivery option from fallback
+        const deliveryOptionId =
+          fallbackDeliveryOptions[0]._id || fallbackDeliveryOptions[0].id;
+
+        // Continue with checkout using fallback option
+        const orderResponse = await api.post(
+          "/orders/checkout/complete",
+          {
+            addressId,
+            deliveryOptionId,
+            paymentMethod: "payfast",
+            email: email,
+            notes: subscribe ? "Subscribed to updates" : undefined,
+          },
+          {
+            headers: {
+              "x-session-id": sessionId,
+            },
+          }
+        );
+
+        const orderResponseData = orderResponse.data;
+        if (!orderResponseData.success) {
+          throw new Error(orderResponseData.error || "Failed to create order");
+        }
+
+        const order = orderResponseData.order || orderResponseData.data;
+        const orderId = order._id || order.orderNumber;
+
+        // Prepare Payfast payment data
+        const PAYFAST_CONFIG = {
+          merchant_id:
+            process.env.NEXT_PUBLIC_PAYFAST_MERCHANT_ID || "10038198",
+          merchant_key:
+            process.env.NEXT_PUBLIC_PAYFAST_MERCHANT_KEY || "8yshtxb2mu1oa",
+          sandbox: process.env.NEXT_PUBLIC_PAYFAST_SANDBOX === "true" || true,
+        };
+
+        const paymentData: Record<string, any> = {
+          merchant_id: PAYFAST_CONFIG.merchant_id,
+          merchant_key: PAYFAST_CONFIG.merchant_key,
+          amount: cart.total.toFixed(2),
+          item_name: `Order ${orderId}`,
+          name_first: firstName,
+          name_last: lastName,
+          email_address: email,
+          return_url: `${window.location.origin}/checkout/payment/success?orderId=${orderId}`,
+          cancel_url: `${window.location.origin}/checkout/payment/cancel?orderId=${orderId}`,
+          notify_url: `${window.location.origin}/api/payfast/notify`,
+        };
+
+        sessionStorage.setItem(
+          "checkoutData",
+          JSON.stringify({
+            orderId,
+            order,
+            address: {
+              fullName: `${firstName} ${lastName}`,
+              phone: "",
+              street: address,
+              apartment: apartment || undefined,
+              city,
+              state,
+              postalCode: zipCode,
+              country,
+            },
+            amount: cart.total,
+          })
+        );
+
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = PAYFAST_CONFIG.sandbox
+          ? "https://sandbox.payfast.co.za/eng/process"
+          : "https://www.payfast.co.za/eng/process";
+        Object.keys(paymentData).forEach((key) => {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = paymentData[key];
+          form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+        return; // Exit early since we handled fallback
+      }
+
+      // Use first active delivery option
+      const deliveryOptionId = deliveryOptions[0]._id || deliveryOptions[0].id;
+
+      // Complete checkout to create order (guest checkout with sessionId header) - using v3 routes
+      const orderResponse = await api.post(
+        "/orders/checkout/complete",
+        {
+          addressId,
+          deliveryOptionId,
+          paymentMethod: "payfast",
+          email: email, // Include email for guest checkout
+          notes: subscribe ? "Subscribed to updates" : undefined,
+        },
+        {
+          headers: {
+            "x-session-id": sessionId,
+          },
+        }
+      );
+
+      const orderResponseData = orderResponse.data;
+
+      if (!orderResponseData.success) {
+        throw new Error(orderResponseData.error || "Failed to create order");
+      }
+
+      const order = orderResponseData.order || orderResponseData.data;
+      // Prefer orderNumber over _id for better user experience in URLs
+      const orderId = order.orderNumber || order._id;
+
+      // Prepare Payfast payment data
+      const PAYFAST_CONFIG = {
+        merchant_id: process.env.NEXT_PUBLIC_PAYFAST_MERCHANT_ID || "10038198",
+        merchant_key:
+          process.env.NEXT_PUBLIC_PAYFAST_MERCHANT_KEY || "8yshtxb2mu1oa",
+        sandbox: process.env.NEXT_PUBLIC_PAYFAST_SANDBOX === "true" || true,
+      };
+
+      const paymentData: Record<string, any> = {
+        merchant_id: PAYFAST_CONFIG.merchant_id,
+        merchant_key: PAYFAST_CONFIG.merchant_key,
+        amount: cart.total.toFixed(2),
+        item_name: `Order ${orderId}`,
+        name_first: firstName,
+        name_last: lastName,
+        email_address: email,
+        return_url: `${window.location.origin}/checkout/payment/success?orderId=${orderId}`,
+        cancel_url: `${window.location.origin}/checkout/payment/cancel?orderId=${orderId}`,
+        notify_url: `${window.location.origin}/api/payfast/notify`,
+      };
+
+      // Store checkout data in sessionStorage for payment success page
+      sessionStorage.setItem(
+        "checkoutData",
+        JSON.stringify({
+          orderId,
+          order,
+          address: {
+            fullName: `${firstName} ${lastName}`,
+            phone: "",
+            street: address,
+            apartment: apartment || undefined,
+            city,
+            state,
+            postalCode: zipCode,
+            country,
+          },
+          amount: cart.total,
+        })
+      );
+
+      // Create and submit Payfast form
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = PAYFAST_CONFIG.sandbox
+        ? "https://sandbox.payfast.co.za/eng/process"
+        : "https://www.payfast.co.za/eng/process";
+
+      Object.keys(paymentData).forEach((key) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = paymentData[key];
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      setPaymentError(error.message || "Payment failed. Please try again.");
+      setProcessingPayment(false);
+    }
+  };
+
+  // Empty cart state
+  if (cart.items.length === 0) {
+    return (
+      <div className="min-h-screen bg-white">
+        {/* Header */}
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-white">
+          <button
+            onClick={() => router.back()}
+            className="text-neutral-900 hover:opacity-70 transition-opacity"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <Link
+            href="/cart"
+            className="relative text-neutral-900 hover:opacity-70 transition-opacity"
+            aria-label="View cart"
+          >
+            <ShoppingBag className="h-6 w-6" />
+            {cartItemCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-neutral-900 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center">
+                {cartItemCount > 99 ? "99+" : cartItemCount}
+              </span>
+            )}
+          </Link>
+        </div>
+
+        <div className="pt-20 pb-20 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p className="text-sm uppercase tracking-widest text-neutral-900 mb-4">
+              YOUR CART IS EMPTY
             </p>
             <Link
               href="/products"
-              className="inline-block bg-black text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+              className="text-sm uppercase tracking-widest text-neutral-900 underline"
             >
-              Start Shopping
+              CONTINUE SHOPPING
             </Link>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  // Main Cart Content Component
-  const CartContent = () => (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Shopping Cart</h1>
-          <Link
-            href="/products"
-            className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Continue Shopping
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <div className="bg-white shadow-sm overflow-hidden">
-              <div className="p-4 sm:p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Cart Items ({cartItems.length})
+  return (
+    <Layout>
+      <div className="min-h-screen bg-white">
+        {/* Main Content */}
+        <div className="pt-24 pb-20 max-w-7xl mx-auto p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+            {/* Left Column - Checkout Form */}
+            <div className="space-y-12">
+              {/* Contact Information */}
+              <div className="space-y-12">
+                <h2 className="text-lg uppercase tracking-widest text-black font-bold mb-6">
+                  CONTACT INFORMATION
                 </h2>
-                <div className="space-y-4">
-                  {cartItems.map((item: any) => (
-                    <motion.div
-                      key={item._id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      className="border-b border-gray-200 pb-4 last:border-b-0"
+                <div className="space-y-8">
+                  <div>
+                    <label className="block text-sm uppercase tracking-widest text-black font-medium mb-2">
+                      EMAIL ADDRESS
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full border border-black bg-white px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:border-neutral-900 transition-colors"
+                      placeholder="EMAIL@EXAMPLE.COM"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="subscribe"
+                      checked={subscribe}
+                      onChange={(e) => setSubscribe(e.target.checked)}
+                      className="w-4 h-4 border-black text-neutral-900 focus:ring-neutral-900"
+                    />
+                    <label
+                      htmlFor="subscribe"
+                      className="text-xs uppercase tracking-widest text-neutral-900 cursor-pointer"
                     >
-                      {/* Mobile Layout */}
-                      <div className="flex sm:hidden space-x-4">
-                        {/* Product Image */}
-                        <div className="flex-shrink-0">
-                          <div className="w-20 h-20 relative bg-gray-100 overflow-hidden">
-                            {getProductImage(item) &&
-                            !imageErrors.has(item._id) ? (
-                              <Image
-                                src={getProductImage(item)!}
-                                alt={
-                                  (item.productId || item.product)?.name ||
-                                  "Product"
-                                }
-                                fill
-                                className="object-cover"
-                                onError={() => handleImageError(item._id)}
-                                unoptimized={getProductImage(item)?.includes(
-                                  "localhost"
-                                )}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                <div className="text-center">
-                                  <div className="text-lg mb-1">📷</div>
-                                  <div className="text-xs">No Image</div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                      SUBSCRIBE TO UPDATES AND NOTIFICATIONS
+                    </label>
+                  </div>
+                </div>
+              </div>
 
-                        {/* Product Details */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex-1 pr-2">
-                              <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
-                                {(item.productId || item.product)?.name ||
-                                  "Product"}
-                              </h3>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {(item.productId || item.product)?.categoryId
-                                  ?.name || "Uncategorized"}
-                              </p>
-                              <p className="text-sm font-medium text-gray-900 mt-1">
-                                {formatPrice(
-                                  (item.productId || item.product)?.pricing
-                                    ?.salePrice ||
-                                    (item.productId || item.product)?.pricing
-                                      ?.basePrice ||
-                                    0
-                                )}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => removeItem(item._id)}
-                              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+              {/* Shipping Address */}
+              <div className="space-y-12">
+                <h2 className="text-lg uppercase tracking-widest text-black font-bold mb-6">
+                  SHIPPING ADDRESS
+                </h2>
+                <div className="space-y-8">
+                  {/* First Name / Last Name */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm uppercase tracking-widest text-black font-medium mb-2">
+                        FIRST NAME
+                      </label>
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="w-full border border-black bg-white px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:border-neutral-900 transition-colors"
+                        placeholder="FIRST NAME"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm uppercase tracking-widest text-black font-medium mb-2">
+                        LAST NAME
+                      </label>
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full border border-black bg-white px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:border-neutral-900 transition-colors"
+                        placeholder="LAST NAME"
+                      />
+                    </div>
+                  </div>
 
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() =>
-                                  updateQuantity(item._id, item.quantity - 1)
-                                }
-                                disabled={isUpdating}
-                                className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </button>
+                  {/* Address */}
+                  <div>
+                    <label className="block text-sm uppercase tracking-widest text-black font-medium mb-2">
+                      ADDRESS
+                    </label>
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full border border-black bg-white px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:border-neutral-900 transition-colors"
+                      placeholder="START TYPING YOUR ADDRESS..."
+                    />
+                  </div>
 
-                              <span className="w-8 text-center text-sm font-medium">
-                                {item.quantity}
-                              </span>
+                  {/* Apartment */}
+                  <div>
+                    <label className="block text-sm uppercase tracking-widest text-black font-medium mb-2">
+                      APARTMENT, SUITE, UNIT, ETC. (OPTIONAL)
+                    </label>
+                    <input
+                      type="text"
+                      value={apartment}
+                      onChange={(e) => setApartment(e.target.value)}
+                      className="w-full border border-black bg-white px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:border-neutral-900 transition-colors"
+                      placeholder="APARTMENT, SUITE, UNIT, FLOOR, ETC."
+                    />
+                  </div>
 
-                              <button
-                                onClick={() =>
-                                  updateQuantity(item._id, item.quantity + 1)
-                                }
-                                disabled={isUpdating}
-                                className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </button>
-                            </div>
+                  {/* City / Country */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm uppercase tracking-widest text-black font-medium mb-2">
+                        CITY
+                      </label>
+                      <input
+                        type="text"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="w-full border border-black bg-white px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:border-neutral-900 transition-colors"
+                        placeholder="CITY"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm uppercase tracking-widest text-black font-medium mb-2">
+                        COUNTRY
+                      </label>
+                      <select
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        className="w-full border border-black bg-white px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:border-neutral-900 transition-colors"
+                      >
+                        <option value="">SELECT COUNTRY</option>
+                        <option value="US">United States</option>
+                        <option value="ZA">South Africa</option>
+                        <option value="GB">United Kingdom</option>
+                        {/* Add more countries as needed */}
+                      </select>
+                    </div>
+                  </div>
 
-                            <div className="text-right">
-                              <p className="text-sm font-semibold text-gray-900">
-                                {formatPrice(
-                                  item.totalPrice || item.price || 0
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Desktop Layout */}
-                      <div className="hidden sm:flex items-center space-x-4">
-                        {/* Product Image */}
-                        <div className="flex-shrink-0">
-                          <div className="w-20 h-20 relative bg-gray-100 overflow-hidden">
-                            {getProductImage(item) &&
-                            !imageErrors.has(item._id) ? (
-                              <Image
-                                src={getProductImage(item)!}
-                                alt={
-                                  (item.productId || item.product)?.name ||
-                                  "Product"
-                                }
-                                fill
-                                className="object-cover"
-                                onError={() => handleImageError(item._id)}
-                                unoptimized={getProductImage(item)?.includes(
-                                  "localhost"
-                                )}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                <div className="text-center">
-                                  <div className="text-lg mb-1">📷</div>
-                                  <div className="text-xs">No Image</div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Product Details */}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
-                            {(item.productId || item.product)?.name ||
-                              "Product"}
-                          </h3>
-                          <p className="text-sm text-gray-500 truncate">
-                            {(item.productId || item.product)?.categoryId
-                              ?.name || "Uncategorized"}
-                          </p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {formatPrice(
-                              (item.productId || item.product)?.pricing
-                                ?.salePrice ||
-                                (item.productId || item.product)?.pricing
-                                  ?.basePrice ||
-                                0
-                            )}
-                          </p>
-                        </div>
-
-                        {/* Quantity Controls */}
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() =>
-                              updateQuantity(item._id, item.quantity - 1)
-                            }
-                            disabled={isUpdating}
-                            className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </button>
-
-                          <span className="w-8 text-center text-sm font-medium">
-                            {item.quantity}
-                          </span>
-
-                          <button
-                            onClick={() =>
-                              updateQuantity(item._id, item.quantity + 1)
-                            }
-                            disabled={isUpdating}
-                            className="p-1 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
-
-                        {/* Item Total */}
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900">
-                            {formatPrice(item.totalPrice || item.price || 0)}
-                          </p>
-                        </div>
-
-                        {/* Remove Button */}
-                        <button
-                          onClick={() => removeItem(item._id)}
-                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))}
+                  {/* State / Zip */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm uppercase tracking-widest text-black font-medium mb-2">
+                        STATE / PROVINCE
+                      </label>
+                      <input
+                        type="text"
+                        value={state}
+                        onChange={(e) => setState(e.target.value)}
+                        className="w-full border border-black bg-white px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:border-neutral-900 transition-colors"
+                        placeholder="STATE / PROVINCE"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm uppercase tracking-widest text-black font-medium mb-2">
+                        ZIP / POSTAL CODE
+                      </label>
+                      <input
+                        type="text"
+                        value={zipCode}
+                        onChange={(e) => setZipCode(e.target.value)}
+                        className="w-full border border-black bg-white px-4 py-3 text-sm text-neutral-900 focus:outline-none focus:border-neutral-900 transition-colors"
+                        placeholder="ZIP / POSTAL CODE"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white shadow-sm p-4 sm:p-6 sticky top-4 sm:top-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Order Summary
+            {/* Right Column - Order Summary */}
+            <div>
+              <h2 className="text-lg uppercase tracking-widest text-black font-bold mb-12">
+                ORDER SUMMARY
               </h2>
 
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">{formatPrice(subtotal)}</span>
-                </div>
+              {/* Product Listings */}
+              <div className="space-y-6 mb-8">
+                {cart.items.map((item) => {
+                  const productImage = getProductImage(item);
+                  const productCode = getProductCode(item);
 
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">
-                    {shipping === 0 ? "Free" : formatPrice(shipping)}
+                  return (
+                    <div key={item.id} className="flex gap-4">
+                      {/* Product Image */}
+                      <div className="flex-shrink-0">
+                        <div className="w-20 h-20  overflow-hidden">
+                          {productImage ? (
+                            <Image
+                              src={productImage}
+                              alt={item.product.name}
+                              width={80}
+                              height={80}
+                              className="object-scale-down w-full h-full bg-[url(https://res.cloudinary.com/shelflife-online/image/upload/f_auto,q_auto:eco/v1700810497/img/product-overlay.png)]"
+                              unoptimized={productImage.includes("localhost")}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-neutral-300 text-xs">
+                              NO IMAGE
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Product Details */}
+                      <div className="flex-1 flex justify-between">
+                        <div className="flex-1 gap-2">
+                          <p className="text-xs uppercase tracking-widest text-neutral-900 mb-2 font-medium">
+                            {productCode}
+                          </p>
+                          <div className="flex gap-4 text-xs uppercase tracking-widest text-black mb-2">
+                            {item.size && (
+                              <>
+                                <span>SIZE</span>
+                                <span className="text-sm text-neutral-900 font-semibold">
+                                  {item.size}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex gap-2 text-sm">
+                            <span>PRICE</span>
+                            <p className="text-sm text-neutral-900 font-semibold mb-2">
+                              {formatPrice(
+                                item.unitPrice,
+                                item.product.pricing.currency
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right space-y-4 justify-center">
+                          <p className="text-sm text-neutral-900 font-semibold">
+                            {formatPrice(
+                              item.totalPrice,
+                              item.product.pricing.currency
+                            )}
+                          </p>
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() =>
+                                handleQuantityUpdate(item.id, item.quantity - 1)
+                              }
+                              className="w-6 h-6 flex items-center justify-center border border-black text-neutral-900 hover:border-neutral-900 transition-colors text-xs"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <span className="text-xs uppercase tracking-wide text-neutral-900 w-6 text-center">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() =>
+                                handleQuantityUpdate(item.id, item.quantity + 1)
+                              }
+                              className="w-6 h-6 flex items-center justify-center border border-black text-neutral-900 hover:border-neutral-900 transition-colors text-xs"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Summary Totals */}
+              <div className="border-t border-neutral-200 pt-6 space-y-3">
+                <div className="flex justify-between text-xs uppercase tracking-widest text-black">
+                  <span>SUBTOTAL</span>
+                  <span className="font-semibold">
+                    {formatPrice(cart.subtotal)}
                   </span>
                 </div>
-
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tax</span>
-                  <span className="font-medium">{formatPrice(tax)}</span>
+                <div className="flex justify-between text-xs uppercase tracking-widest text-black">
+                  <span>SHIPPING</span>
+                  <span className="text-black">CALCULATED AT NEXT STEP</span>
                 </div>
-
-                {discount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Discount</span>
-                    <span className="font-medium text-green-600">
-                      -{formatPrice(discount)}
-                    </span>
-                  </div>
-                )}
-
-                <div className="border-t border-gray-200 pt-3">
-                  <div className="flex justify-between text-base font-semibold">
-                    <span>Total</span>
-                    <span>{formatPrice(total)}</span>
-                  </div>
+                <div className="flex justify-between text-xs uppercase tracking-widest text-black">
+                  <span>TAXES</span>
+                  <span className="font-semibold">{formatPrice(cart.tax)}</span>
+                </div>
+                <div className="flex justify-between text-sm uppercase tracking-widest text-black font-medium pt-3 border-t border-neutral-200">
+                  <span className="font-semibold">TOTAL</span>
+                  <span className="font-semibold">
+                    {formatPrice(cart.total)}
+                  </span>
                 </div>
               </div>
 
-              {/* Free shipping message */}
-              {subtotal < 50 && (
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    Add {formatPrice(50 - subtotal)} more for free shipping
-                  </p>
+              {/* Payment Error */}
+              {paymentError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-800 text-xs uppercase tracking-widest">
+                  {paymentError}
                 </div>
               )}
 
-              {/* Checkout Button */}
-              <Link
-                href="/checkout"
-                onClick={handleCheckoutClick}
-                className="mt-6 w-full bg-black text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800 transition-colors text-center block"
+              {/* Pay with Payfast Button */}
+              <button
+                onClick={handlePayfastPayment}
+                disabled={processingPayment}
+                className="w-full mt-6 bg-neutral-900 text-white py-4 px-6 text-xs uppercase tracking-widest font-medium hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Proceed to Checkout
-              </Link>
-
-              {/* Continue Shopping */}
-              <Link
-                href="/products"
-                className="mt-3 w-full bg-gray-100 text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-center block"
-              >
-                Continue Shopping
-              </Link>
+                {processingPayment ? "PROCESSING..." : "PAY WITH PAYFAST"}
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-
-  // Main render with Layout wrapper
-  return (
-    <Layout>
-      {cartLoading && <LoadingState />}
-      {!cartLoading && cartError && <ErrorState />}
-      {!cartLoading && !cartError && cartItems.length === 0 && (
-        <EmptyCartState />
-      )}
-      {!cartLoading && !cartError && cartItems.length > 0 && <CartContent />}
-
-      {/* Authentication Drawer */}
-      <AuthDrawer
-        isOpen={showAuthDrawer}
-        onClose={() => setShowAuthDrawer(false)}
-        onAuthSuccess={handleAuthSuccess}
-      />
     </Layout>
   );
 }

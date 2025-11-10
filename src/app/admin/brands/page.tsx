@@ -159,12 +159,12 @@ export default function BrandsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Brands</h1>
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Brands</h1>
         </div>
         <div className="bg-white shadow rounded-lg">
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             <div className="animate-pulse space-y-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-16 bg-gray-200 rounded"></div>
@@ -177,15 +177,16 @@ export default function BrandsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Brands</h1>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Brands</h1>
         <button
           onClick={() => setShowAddForm(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="inline-flex items-center justify-center px-3 md:px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Add Brand
+          <PlusIcon className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Add Brand</span>
+          <span className="sm:hidden">Add</span>
         </button>
       </div>
 
@@ -193,11 +194,11 @@ export default function BrandsPage() {
       {showAddForm && (
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <h3 className="text-base md:text-lg font-medium text-gray-900 mb-4">
               {editingBrand ? "Edit Brand" : "Add New Brand"}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Name *
@@ -306,17 +307,17 @@ export default function BrandsPage() {
                 </label>
               </div>
               
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   {editingBrand ? "Update" : "Create"} Brand
                 </button>
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Cancel
                 </button>
@@ -329,122 +330,229 @@ export default function BrandsPage() {
       {/* Brands List */}
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
-          <div className="overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Logo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Website
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Country
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {Array.isArray(brands) && brands.length > 0 ? (
-                  brands.map((brand) => (
-                  <tr key={brand._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex-shrink-0 h-10 w-10">
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Logo
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Website
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Country
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {Array.isArray(brands) && brands.length > 0 ? (
+                    brands.map((brand) => (
+                    <tr key={brand._id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          {brand.logo ? (
+                            <img
+                              className="h-10 w-10 rounded-full object-contain border border-gray-300"
+                              src={brand.logo}
+                              alt={`${brand.name} logo`}
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <PhotoIcon className="h-5 w-5 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {brand.name}
+                        </div>
+                        {brand.description && (
+                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                            {brand.description}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {brand.website ? (
+                            <a
+                              href={brand.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-900 truncate max-w-xs block"
+                            >
+                              {brand.website}
+                            </a>
+                          ) : (
+                            <span className="text-gray-400">No website</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {brand.countryOrigin || "Not specified"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          brand.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        }`}>
+                          {brand.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(brand.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(brand)}
+                            className="inline-flex items-center px-2.5 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            title="Edit Brand"
+                          >
+                            <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(brand._id)}
+                            className="inline-flex items-center px-2.5 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            title="Delete Brand"
+                          >
+                            <TrashIcon className="h-3.5 w-3.5 mr-1.5" />
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                        No brands found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile/Tablet Card View */}
+          <div className="lg:hidden space-y-4">
+            {Array.isArray(brands) && brands.length > 0 ? (
+              brands.map((brand) => (
+                <div
+                  key={brand._id}
+                  className="border border-gray-200 rounded-lg p-4 space-y-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className="flex-shrink-0 h-16 w-16">
                         {brand.logo ? (
                           <img
-                            className="h-10 w-10 rounded-full object-contain border border-gray-300"
+                            className="h-16 w-16 rounded-full object-contain border border-gray-300"
                             src={brand.logo}
                             alt={`${brand.name} logo`}
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                            <PhotoIcon className="h-5 w-5 text-gray-400" />
+                          <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center">
+                            <PhotoIcon className="h-8 w-8 text-gray-400" />
                           </div>
                         )}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {brand.name}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {brand.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Created: {new Date(brand.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
-                      {brand.description && (
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(brand)}
+                        className="inline-flex items-center justify-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
+                        title="Edit Brand"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1.5" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(brand._id)}
+                        className="inline-flex items-center justify-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 whitespace-nowrap"
+                        title="Delete Brand"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-1.5" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {brand.description && (
+                      <div>
+                        <p className="text-xs text-gray-500">Description</p>
+                        <p className="text-sm text-gray-900 mt-1">
                           {brand.description}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                        </p>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-gray-500">Website</p>
                         {brand.website ? (
                           <a
                             href={brand.website}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-900 truncate max-w-xs block"
+                            className="text-sm text-blue-600 hover:text-blue-900 truncate block mt-1"
                           >
                             {brand.website}
                           </a>
                         ) : (
-                          <span className="text-gray-400">No website</span>
+                          <p className="text-sm text-gray-400 mt-1">No website</p>
                         )}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {brand.countryOrigin || "Not specified"}
+                      <div>
+                        <p className="text-xs text-gray-500">Country</p>
+                        <p className="text-sm text-gray-900 mt-1">
+                          {brand.countryOrigin || "Not specified"}
+                        </p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        brand.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                      }`}>
-                        {brand.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(brand.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEdit(brand)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="Edit Brand"
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(brand._id)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete Brand"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
+                      <div>
+                        <p className="text-xs text-gray-500">Status</p>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${
+                          brand.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        }`}>
+                          {brand.isActive ? "Active" : "Inactive"}
+                        </span>
                       </div>
-                    </td>
-                  </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                      No brands found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No brands found
+              </div>
+            )}
           </div>
         </div>
       </div>

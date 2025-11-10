@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { storeConfig } from "@/lib/storeConfig";
+import { StoreProvider } from "@/store/Provider";
 
 export const metadata: Metadata = {
   title: storeConfig.seo.defaultTitle,
@@ -26,7 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
-        {children}
+        <StoreProvider>
+          {children}
+        </StoreProvider>
       </body>
     </html>
   );

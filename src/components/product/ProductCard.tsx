@@ -11,7 +11,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const [imageError, setImageError] = useState(false);
-
+  console.log("Product in ProductCard:", product);
   // Get the primary image or first image
   const getProductImage = () => {
     if (product.images && product.images.length > 0) {
@@ -43,19 +43,20 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <Link href={`/products/${product._id}`}>
-      <div className="group cursor-pointer">
+      <div className="group cursor-pointer hover:scale-105 transition-transform duration-75 ease-in-out">
         {/* Product Image */}
-        <div className="aspect-square mb-3 overflow-hidden bg-[url(https://res.cloudinary.com/shelflife-online/image/upload/f_auto,q_auto:eco/v1700810497/img/product-overlay.png)]">
+        <div className="aspect-square mb-1  bg-[url(https://res.cloudinary.com/shelflife-online/image/upload/f_auto,q_auto:eco/v1700810497/img/product-overlay.png)]">
           <div className="relative w-full h-full">
             {productImage && !imageError ? (
               <Image
                 src={productImage}
                 alt={product.name}
                 fill
-                className="object-scale-down pt-[50px] pb-[72px] px-2 transition-transform duration-300 group-hover:scale-105"
+                className="object-scale-down"
                 onError={handleImageError}
                 unoptimized={productImage.includes("localhost")}
-                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                loading="lazy"
+                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-neutral-400 pt-[50px] pb-[72px] px-2">
@@ -69,8 +70,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
         </div>
 
         {/* Product Name Only */}
-        <h3 className="text-sm uppercase text-center tracking-wide font-medium text-neutral-900">
+        <h3 className="text-base uppercase  tracking-wide font-medium text-black">
           {product.name}
+        </h3>
+        <h3 className="text-base uppercase tracking-wide font-semibold text-red-400 line-through">
+          {product.pricing.currency} {product.pricing.basePrice}
+        </h3>
+        <h3 className="text-base uppercase tracking-wide font-semibold text-black">
+          {product.pricing.currency} {product.pricing.salePrice}
         </h3>
       </div>
     </Link>

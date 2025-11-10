@@ -12,19 +12,27 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { Product, ProductVariant } from "@/types";
-import { ProductService, CartService } from "@/services/v2";
+import { ProductService } from "@/services/v2";
 import Link from "next/link";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { addItem } from "@/store/slices/cartSlice";
+import Layout from "@/components/layout/Layout";
+import { motion } from "framer-motion";
 
 export default function ProductDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const productId = params.id as string;
+  const dispatch = useAppDispatch();
+  const cartItemCount = useAppSelector((state) => state.cart.itemCount);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
   const [showSizeModal, setShowSizeModal] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [buttonAnimation, setButtonAnimation] = useState(false);
 
   // Local state for v2 fetching
   const [product, setProduct] = useState<Product | null>(null);
@@ -293,23 +301,49 @@ export default function ProductDetailsPage() {
   const handleAddToCart = async () => {
     if (!product) return;
 
+    // For v2 variable products, require size selection
+    if (
+      product.productType === "variable" &&
+      !selectedSize &&
+      availableSizes.length > 0
+    ) {
+      return; // Don't add to cart if size is required but not selected
+    }
+
     setIsAddingToCart(true);
+    setButtonAnimation(true);
+
+    const startTime = Date.now();
+    const minDuration = 1000; // 2 seconds minimum
 
     try {
-      const response = await CartService.addToCart({
-        productId: product._id,
-        quantity: 1,
-        variantId: selectedVariant?._id,
-      });
+      // Add item to cart using Redux slice
+      dispatch(
+        addItem({
+          product,
+          variant: selectedVariant || undefined,
+          size: selectedSize || undefined,
+          quantity,
+        })
+      );
 
-      if (response.success) {
-        // Success feedback can be added later if needed
-        console.log("Added to cart");
-      }
+      // Reset quantity after adding to cart
+      setQuantity(1);
+
+      // Success feedback can be added later if needed
+      console.log("Added to cart");
     } catch (error: any) {
       console.error("Error adding to cart:", error);
     } finally {
-      setIsAddingToCart(false);
+      // Ensure minimum duration of 2 seconds
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, minDuration - elapsedTime);
+
+      setTimeout(() => {
+        setIsAddingToCart(false);
+        // Reset animation after a short delay
+        setTimeout(() => setButtonAnimation(false), 300);
+      }, remainingTime);
     }
   };
 
@@ -331,181 +365,224 @@ export default function ProductDetailsPage() {
 
   if (productLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900"></div>
-      </div>
+      <Layout>
+        <div className="min-h-screen bg-white flex flex-col">
+          {/* Main Content - Scrollable layout */}
+          <div className="flex-1 flex flex-col pt-16 pb-8 max-w-4xl mx-auto px-6 w-full">
+            {/* Product Image Skeleton */}
+            <div className="flex-shrink-0 flex items-center justify-center py-6 h-[24rem]">
+              <div className="relative w-full">
+                <div className="relative aspect-square w-full h-[24rem]">
+                  <div className="w-full h-full bg-neutral-100 animate-pulse rounded-sm"></div>
+                </div>
+                {/* Image Indicators Skeleton */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {[...Array(3)].map((_, index) => (
+                    <div
+                      key={index}
+                      className="w-2 h-2 rounded-full bg-neutral-200 animate-pulse"
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Product Details Section Skeleton */}
+            <div className="flex-1 z-auto overflow-y-auto space-y-6 mt-6 py-6 max-w-[24rem] mx-auto w-full">
+              {/* Price Skeleton */}
+              <div className="text-center mb-6">
+                <div className="h-6 w-24 bg-neutral-100 animate-pulse rounded mx-auto"></div>
+              </div>
+
+              {/* Size Section Skeleton */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-200 pb-5">
+                  <div className="h-4 w-4 bg-neutral-100 animate-pulse rounded"></div>
+                  <div className="h-4 w-24 bg-neutral-100 animate-pulse rounded"></div>
+                  <div className="h-4 w-4 bg-neutral-100 animate-pulse rounded"></div>
+                </div>
+
+                {/* Size Options Skeleton */}
+                <div className="flex gap-4 flex-wrap pb-3">
+                  {[...Array(6)].map((_, index) => (
+                    <div
+                      key={index}
+                      className="h-8 w-12 bg-neutral-100 animate-pulse rounded"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Add to Cart Button Skeleton */}
+              <div className="w-full h-12 bg-neutral-100 animate-pulse rounded"></div>
+            </div>
+          </div>
+        </div>
+      </Layout>
     );
   }
 
   if (productError || !product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <p className="text-sm uppercase tracking-wide text-neutral-900 mb-4">
-            {productError || "Product not found"}
-          </p>
-          <Link
-            href="/products"
-            className="text-sm uppercase tracking-wide text-neutral-900 underline"
-          >
-            Back to Products
-          </Link>
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="text-center">
+            <p className="text-sm uppercase tracking-wide text-black mb-4">
+              {productError || "Product not found"}
+            </p>
+            <Link
+              href="/products"
+              className="text-sm uppercase tracking-wide text-black underline"
+            >
+              Back to Products
+            </Link>
+          </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="h-screen bg-white overflow-hidden flex flex-col">
-      {/* Minimal Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-white">
-        <button
-          onClick={() => router.back()}
-          className="text-neutral-900 hover:opacity-70 transition-opacity"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="h-6 w-6" />
-        </button>
-        <Link
-          href="/cart"
-          className="text-neutral-900 hover:opacity-70 transition-opacity"
-          aria-label="View cart"
-        >
-          <ShoppingBag className="h-6 w-6" />
-        </Link>
-      </div>
+    <Layout>
+      <div className="min-h-screen bg-white flex flex-col">
+        {/* Main Content - Scrollable layout */}
+        <div className="flex-1 flex flex-col pt-16 pb-8 max-w-4xl mx-auto px-6 w-full">
+          {/* Product Image with Carousel Navigation - Centered */}
+          <div className="flex-shrink-0 flex items-center justify-center py-6 h-[24rem]">
+            <div className="relative w-full ">
+              {/* Main Image Container */}
+              <div className="relative aspect-square w-full h-[24rem]">
+                {/* Left Arrow */}
+                {productImages.length > 1 && (
+                  <button
+                    onClick={() => navigateImage("prev")}
+                    className="absolute left-2 sm:-left-[2rem] top-1/2 -translate-y-1/2 z-10  text-black cursor-pointer"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
+                  </button>
+                )}
 
-      {/* Main Content - Centered with flex layout */}
-      <div className="flex-1 flex flex-col justify-between pt-16 pb-32 max-w-4xl mx-auto px-6 w-full">
-        {/* Product Image with Carousel Navigation - Centered */}
-        <div className="flex-1 flex items-center justify-center">
-          <div className="relative w-full max-w-[31rem]">
-            {/* Main Image Container */}
-            <div className="relative aspect-square w-full">
-              {/* Left Arrow */}
-              {productImages.length > 1 && (
-                <button
-                  onClick={() => navigateImage("prev")}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-neutral-900 hover:opacity-70 transition-opacity"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="h-8 w-8" />
-                </button>
-              )}
-
-              {/* Product Image */}
-              {currentImage && !imageErrors.has(selectedImageIndex) ? (
-                <Image
-                  src={currentImage}
-                  alt={product.name}
-                  fill
-                  className="object-scale-down pt-[50px] pb-[72px] bg-[url(https://res.cloudinary.com/shelflife-online/image/upload/f_auto,q_auto:eco/v1700810497/img/product-overlay.png)]"
-                  onError={() => handleImageError(selectedImageIndex)}
-                  unoptimized={currentImage.includes("localhost")}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-neutral-50">
-                  <div className="text-center text-neutral-400">
-                    <div className="text-4xl mb-2">📷</div>
-                    <div className="text-sm">No Image</div>
+                {/* Product Image */}
+                {currentImage && !imageErrors.has(selectedImageIndex) ? (
+                  <Image
+                    src={currentImage}
+                    alt={product.name}
+                    fill
+                    className="object-scale-down w-[min(100%,560px)] max-w-[calc(100vh-20rem)] mx-auto bg-[url(https://res.cloudinary.com/shelflife-online/image/upload/f_auto,q_auto:eco/v1700810497/img/product-overlay.png)]"
+                    onError={() => handleImageError(selectedImageIndex)}
+                    unoptimized={currentImage.includes("localhost")}
+                    priority
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-neutral-50">
+                    <div className="text-center text-neutral-400">
+                      <div className="text-4xl mb-2">📷</div>
+                      <div className="text-sm">No Image</div>
+                    </div>
                   </div>
+                )}
+
+                {/* Right Arrow */}
+                {productImages.length > 1 && (
+                  <button
+                    onClick={() => navigateImage("next")}
+                    className="absolute right-2 sm:-right-[2rem] top-1/2 -translate-y-1/2 z-10  text-black cursor-pointer "
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
+                  </button>
+                )}
+              </div>
+
+              {/* Image Indicators */}
+              {productImages.length > 1 && (
+                <div className="flex justify-center gap-2 mt-4">
+                  {productImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        selectedImageIndex === index
+                          ? " bg-black"
+                          : " bg-neutral-400"
+                      }`}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
                 </div>
               )}
-
-              {/* Right Arrow */}
-              {productImages.length > 1 && (
-                <button
-                  onClick={() => navigateImage("next")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-neutral-900 hover:opacity-70 transition-opacity"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="h-8 w-8" />
-                </button>
-              )}
             </div>
+          </div>
 
-            {/* Image Indicators */}
-            {productImages.length > 1 && (
-              <div className="flex justify-center gap-2 mt-4">
-                {productImages.map((_, index) => (
+          {/* Product Details Section - Scrollable */}
+          <div className="flex-1 z-auto overflow-y-auto space-y-6 mt-6 py-6 max-w-[24rem] mx-auto w-full">
+            {/* Price */}
+            <div className="text-center mb-6">
+              <p className="text-base text-black font-bold">
+                {formatPrice(salePrice || basePrice, currency)}
+              </p>
+            </div>
+            {/* SELECT SIZE Section */}
+            {availableSizes.length > 0 && (
+              <div className="flex items-center justify-between border-b border-black pb-5">
+                <div className="flex items-center gap-1">
                   <button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`h-2 transition-all ${
-                      selectedImageIndex === index
-                        ? "w-6 bg-neutral-900"
-                        : "w-2 bg-neutral-400"
+                    onClick={() => setShowSizeModal(!showSizeModal)}
+                    className="text-black hover:opacity-70 transition-opacity cursor-pointer"
+                    aria-label="Size guide"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                  </button>
+                </div>
+                <span className=" uppercase font-medium tracking-widest text-black">
+                  SELECT SIZE
+                </span>
+                <button
+                  disabled={selectedSize === null}
+                  onClick={() => setSelectedSize(null)}
+                  className="text-black hover:opacity-70 transition-opacity cursor-pointer"
+                  aria-label="Clear size selection"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Size Options */}
+            {availableSizes.length > 0 && (
+              <div className="flex  gap-4 flex-wrap pb-3">
+                {availableSizes.map((size: { id: string; name: string }) => (
+                  <button
+                    key={size.id}
+                    onClick={() => handleSizeSelect(size.name)}
+                    className={`text-sm uppercase tracking-wide font-bold transition-all py-1 px-1 cursor-pointer ${
+                      selectedSize === size.name ? " border" : ""
                     }`}
-                    aria-label={`Go to image ${index + 1}`}
-                  />
+                  >
+                    {size.name}
+                  </button>
                 ))}
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Product Details Section - Fixed at bottom */}
-        <div className="space-y-6 py-6 max-w-[28rem] mx-auto w-full">
-          {/* SELECT SIZE Section */}
-          {availableSizes.length > 0 && (
-            <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowSizeModal(!showSizeModal)}
-                  className="text-neutral-900 hover:opacity-70 transition-opacity"
-                  aria-label="Size guide"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </button>
-                <span className="text-xs uppercase tracking-widest text-neutral-900">
-                  SELECT SIZE
-                </span>
-              </div>
-              <button
-                onClick={() => setSelectedSize(null)}
-                className="text-neutral-900 hover:opacity-70 transition-opacity"
-                aria-label="Clear size selection"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-
-          {/* Price */}
-          <div className="text-center">
-            <p className="text-xl text-neutral-900">
-              {formatPrice(salePrice || basePrice, currency)}
-            </p>
-          </div>
-
-          {/* Size Options */}
-          {availableSizes.length > 0 && (
-            <div className="flex justify-center gap-6">
-              {availableSizes.map((size: { id: string; name: string }) => (
-                <button
-                  key={size.id}
-                  onClick={() => handleSizeSelect(size.name)}
-                  className={`text-sm uppercase tracking-wide transition-opacity ${
-                    selectedSize === size.name
-                      ? "text-neutral-900 font-medium"
-                      : "text-neutral-400 hover:text-neutral-600"
-                  }`}
-                >
-                  {size.name}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* INFORMATION Section */}
-          <div className="border-t border-neutral-200 pt-6">
-            <button className="text-xs uppercase tracking-widest text-neutral-900 w-full text-left">
-              INFORMATION
-            </button>
-            {/* Product description could be shown here when expanded */}
+            {/* Add to Cart Button */}
+            <motion.button
+              onClick={handleAddToCart}
+              disabled={
+                isAddingToCart ||
+                (availableSizes.length > 0 && !selectedSize) ||
+                (product.productType === "variable" && !selectedVariant)
+              }
+              animate={buttonAnimation ? { scale: [1, 1.05, 1] } : {}}
+              transition={{ duration: 0.1, ease: "easeOut" }}
+              className="w-full border border-black  text-black cursor-pointer py-4 px-6 text-xs uppercase tracking-widest font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isAddingToCart ? "ADDING..." : "ADD TO CART"}
+            </motion.button>
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }
